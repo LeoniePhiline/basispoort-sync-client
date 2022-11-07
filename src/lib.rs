@@ -14,10 +14,12 @@ mod tests {
 
     use dotenvy::dotenv;
 
-    use crate::hosted_sites::{HostedSitesClient, MethodDetails, SiteTag};
+    use crate::hosted_sites::{HostedSitesClient, MethodDetails, SiteTag, UserIdList, UserChainId, UserChainIdList};
     use crate::rest::RestClient;
 
     use super::*;
+
+    const METHOD_ID: &str = "abcdef123456";
 
     fn make_rest_client() -> Result<RestClient> {
         rest::RestClientBuilder::new(
@@ -39,7 +41,7 @@ mod tests {
         dotenv().ok();
 
         let rest_client = make_rest_client()?;
-        let all_methods = make_sites_client(&rest_client)?.get_all_methods().await?;
+        let all_methods = make_sites_client(&rest_client)?.get_methods().await?;
 
         println!("all_methods: {:#?}", all_methods);
 
@@ -55,13 +57,12 @@ mod tests {
         File::open("./tests/assets/icon_site_post.svg")?.read_to_end(&mut icon_data)?;
 
         let method = MethodDetails {
-            id: "abcdef123456".into(),
+            id: METHOD_ID.into(),
             name: "Test (POST)".into(),
             icon: Some(format!("image/svg+xml,{}", base64::encode(icon_data))),
             url: Some(env::var("HOSTED_SITES_METHOD_URL_POST").unwrap()),
             tags: vec![SiteTag::TeacherApplication],
         };
-
         println!("{method:?}");
 
         let rest_client = make_rest_client()?;
@@ -78,7 +79,7 @@ mod tests {
 
         let rest_client = make_rest_client()?;
         let method = make_sites_client(&rest_client)?
-            .get_method("abcdef123456")
+            .get_method(METHOD_ID)
             .await?;
 
         println!("method: {:#?}", method);
@@ -94,7 +95,7 @@ mod tests {
         File::open("./tests/assets/icon_site_put.svg")?.read_to_end(&mut icon_data)?;
 
         let method = MethodDetails {
-            id: "abcdef123456".into(),
+            id: METHOD_ID.into(),
             name: "Test (PUT)".into(),
             icon: Some(format!("image/svg+xml,{}", base64::encode(icon_data))),
             url: Some(env::var("HOSTED_SITES_METHOD_URL_PUT").unwrap()),
@@ -110,14 +111,141 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn put_method_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123, 456, 789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .put_method_user_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn get_method_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let users = make_sites_client(&rest_client)?
+            .get_method_user_ids(METHOD_ID)
+            .await?;
+
+        println!("users: {users:#?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn delete_method_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_method_user_ids(METHOD_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn add_method_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123456, 456789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .add_method_user_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn remove_method_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123456, 456789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .remove_method_user_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn put_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/abc".into() }].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .put_method_user_chain_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn get_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let users = make_sites_client(&rest_client)?
+            .get_method_user_chain_ids(METHOD_ID)
+            .await?;
+
+        println!("users: {users:#?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn delete_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_method_user_chain_ids(METHOD_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn add_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/def".into() }].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .add_method_user_chain_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn remove_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/def".into() }].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .remove_method_user_chain_ids(METHOD_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
     async fn delete_method() -> crate::Result<()> {
         dotenv().ok();
 
         let rest_client = make_rest_client()?;
         make_sites_client(&rest_client)?
-            .delete_method("abcdef123456")
-            .await?;
-
-        Ok(())
+            .delete_method(METHOD_ID)
+            .await
     }
 }

@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
 
@@ -44,12 +46,73 @@ pub enum SiteTag {
     TeacherApplication,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserIdList {
+    #[serde(rename = "gebruikers")]
+    pub users: Vec<u64>,
+}
+
+impl From<Vec<u64>> for UserIdList {
+    fn from(users: Vec<u64>) -> Self {
+        UserIdList { users }
+    }
+}
+
+impl From<UserIdList> for Vec<u64> {
+    fn from(list: UserIdList) -> Self {
+        list.users
+    }
+}
+
+impl Deref for UserIdList {
+    type Target = Vec<u64>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.users
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserChainIdList {
+    #[serde(rename = "gebruikers")]
+    pub users: Vec<UserChainId>,
+}
+
+impl From<Vec<UserChainId>> for UserChainIdList {
+    fn from(users: Vec<UserChainId>) -> Self {
+        UserChainIdList { users }
+    }
+}
+
+impl From<UserChainIdList> for Vec<UserChainId> {
+    fn from(list: UserChainIdList) -> Self {
+        list.users
+    }
+}
+
+impl Deref for UserChainIdList {
+    type Target = Vec<UserChainId>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.users
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UserChainId {
+    #[serde(rename = "instellingId")]
+    pub institution_id: u64,
+    #[serde(rename = "eckId")]
+    pub chain_id: String,
+}
+
 pub struct HostedSitesClient<'a> {
     rest_client: &'a rest::RestClient,
     base_path: &'static str,
     identity_code: String,
 }
 
+// TODO: Ensure method ID is valid and does not contain a slash; fail with an appropriate error otherwise.
 impl<'a> HostedSitesClient<'a> {
     pub fn new<S: Into<String>>(rest_client: &'a rest::RestClient, identity_code: S) -> Self {
         HostedSitesClient {
@@ -83,7 +146,7 @@ impl<'a> HostedSitesClient<'a> {
         self.rest_client.delete(&self.make_path(path)).await
     }
 
-    pub async fn get_all_methods(&self) -> crate::Result<MethodDetailsList> {
+    pub async fn get_methods(&self) -> crate::Result<MethodDetailsList> {
         let response = self.get("/methode").await?;
         response
             .json::<MethodDetailsList>()
@@ -114,6 +177,105 @@ impl<'a> HostedSitesClient<'a> {
     pub async fn delete_method<T: AsRef<str>>(&self, method_id: T) -> crate::Result<()> {
         self.delete(&format!("/methode/{}", method_id.as_ref()))
             .await?;
+        Ok(())
+    }
+
+    pub async fn get_method_user_ids(&self, method_id: &str) -> crate::Result<UserIdList> {
+        let response = self.get(&format!("/methode/{method_id}/gebruiker")).await?;
+        response
+            .json::<UserIdList>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn put_method_user_ids(
+        &self,
+        method_id: &str,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.put(&format!("/methode/{method_id}/gebruiker"), users)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_method_user_ids(&self, method_id: &str) -> crate::Result<()> {
+        self.delete(&format!("/methode/{method_id}/gebruiker"))
+            .await?;
+        Ok(())
+    }
+
+    pub async fn add_method_user_ids(
+        &self,
+        method_id: &str,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.post(&format!("/methode/{method_id}/gebruiker/addlist"), users)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn remove_method_user_ids(
+        &self,
+        method_id: &str,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.post(&format!("/methode/{method_id}/gebruiker/removelist"), users)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_method_user_chain_ids(
+        &self,
+        method_id: &str,
+    ) -> crate::Result<UserChainIdList> {
+        let response = self
+            .get(&format!("/methode/{method_id}/gebruiker_eckid"))
+            .await?;
+        response
+            .json::<UserChainIdList>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn put_method_user_chain_ids(
+        &self,
+        method_id: &str,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.put(&format!("/methode/{method_id}/gebruiker_eckid"), users)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn delete_method_user_chain_ids(&self, method_id: &str) -> crate::Result<()> {
+        self.delete(&format!("/methode/{method_id}/gebruiker_eckid"))
+            .await?;
+        Ok(())
+    }
+
+    pub async fn add_method_user_chain_ids(
+        &self,
+        method_id: &str,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!("/methode/{method_id}/gebruiker_eckid/addlist"),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn remove_method_user_chain_ids(
+        &self,
+        method_id: &str,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!("/methode/{method_id}/gebruiker_eckid/removelist"),
+            users,
+        )
+        .await?;
         Ok(())
     }
 }
