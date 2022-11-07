@@ -113,6 +113,7 @@ pub struct HostedSitesClient<'a> {
 }
 
 // TODO: Ensure method ID is valid and does not contain a slash; fail with an appropriate error otherwise.
+// TODO: Ensure all validation as documented.
 impl<'a> HostedSitesClient<'a> {
     pub fn new<S: Into<String>>(rest_client: &'a rest::RestClient, identity_code: S) -> Self {
         HostedSitesClient {
@@ -146,6 +147,10 @@ impl<'a> HostedSitesClient<'a> {
         self.rest_client.delete(&self.make_path(path)).await
     }
 
+    /*
+     * Method management
+     */
+
     pub async fn get_methods(&self) -> crate::Result<MethodDetailsList> {
         let response = self.get("/methode").await?;
         response
@@ -154,9 +159,10 @@ impl<'a> HostedSitesClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    pub async fn get_method(&self, method_id: &str) -> crate::Result<MethodDetails> {
-        // TODO: Enfore method_id not containing slash?
-        let response = self.get(&format!("/methode/{method_id}")).await?;
+    pub async fn get_method<S: AsRef<str>>(&self, method_id: S) -> crate::Result<MethodDetails> {
+        let response = self
+            .get(&format!("/methode/{}", method_id.as_ref()))
+            .await?;
         response
             .json::<MethodDetails>()
             .await
@@ -169,67 +175,77 @@ impl<'a> HostedSitesClient<'a> {
     }
 
     pub async fn put_method(&self, method: &MethodDetails) -> crate::Result<()> {
-        // TODO: Enfore method_id not containing slash?
         self.put(&format!("/methode/{}", method.id), method).await?;
         Ok(())
     }
 
-    pub async fn delete_method<T: AsRef<str>>(&self, method_id: T) -> crate::Result<()> {
+    pub async fn delete_method<S: AsRef<str>>(&self, method_id: S) -> crate::Result<()> {
         self.delete(&format!("/methode/{}", method_id.as_ref()))
             .await?;
         Ok(())
     }
 
-    pub async fn get_method_user_ids(&self, method_id: &str) -> crate::Result<UserIdList> {
-        let response = self.get(&format!("/methode/{method_id}/gebruiker")).await?;
+    pub async fn get_method_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+    ) -> crate::Result<UserIdList> {
+        let response = self
+            .get(&format!("/methode/{}/gebruiker", method_id.as_ref()))
+            .await?;
         response
             .json::<UserIdList>()
             .await
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    pub async fn put_method_user_ids(
+    pub async fn put_method_user_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
         users: &UserIdList,
     ) -> crate::Result<()> {
-        self.put(&format!("/methode/{method_id}/gebruiker"), users)
+        self.put(&format!("/methode/{}/gebruiker", method_id.as_ref()), users)
             .await?;
         Ok(())
     }
 
-    pub async fn delete_method_user_ids(&self, method_id: &str) -> crate::Result<()> {
-        self.delete(&format!("/methode/{method_id}/gebruiker"))
+    pub async fn delete_method_user_ids<S: AsRef<str>>(&self, method_id: S) -> crate::Result<()> {
+        self.delete(&format!("/methode/{}/gebruiker", method_id.as_ref()))
             .await?;
         Ok(())
     }
 
-    pub async fn add_method_user_ids(
+    pub async fn add_method_user_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
         users: &UserIdList,
     ) -> crate::Result<()> {
-        self.post(&format!("/methode/{method_id}/gebruiker/addlist"), users)
-            .await?;
+        self.post(
+            &format!("/methode/{}/gebruiker/addlist", method_id.as_ref()),
+            users,
+        )
+        .await?;
         Ok(())
     }
 
-    pub async fn remove_method_user_ids(
+    pub async fn remove_method_user_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
         users: &UserIdList,
     ) -> crate::Result<()> {
-        self.post(&format!("/methode/{method_id}/gebruiker/removelist"), users)
-            .await?;
+        self.post(
+            &format!("/methode/{}/gebruiker/removelist", method_id.as_ref()),
+            users,
+        )
+        .await?;
         Ok(())
     }
 
-    pub async fn get_method_user_chain_ids(
+    pub async fn get_method_user_chain_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
     ) -> crate::Result<UserChainIdList> {
         let response = self
-            .get(&format!("/methode/{method_id}/gebruiker_eckid"))
+            .get(&format!("/methode/{}/gebruiker_eckid", method_id.as_ref()))
             .await?;
         response
             .json::<UserChainIdList>()
@@ -237,42 +253,292 @@ impl<'a> HostedSitesClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    pub async fn put_method_user_chain_ids(
+    pub async fn put_method_user_chain_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
         users: &UserChainIdList,
     ) -> crate::Result<()> {
-        self.put(&format!("/methode/{method_id}/gebruiker_eckid"), users)
-            .await?;
-        Ok(())
-    }
-
-    pub async fn delete_method_user_chain_ids(&self, method_id: &str) -> crate::Result<()> {
-        self.delete(&format!("/methode/{method_id}/gebruiker_eckid"))
-            .await?;
-        Ok(())
-    }
-
-    pub async fn add_method_user_chain_ids(
-        &self,
-        method_id: &str,
-        users: &UserChainIdList,
-    ) -> crate::Result<()> {
-        self.post(
-            &format!("/methode/{method_id}/gebruiker_eckid/addlist"),
+        self.put(
+            &format!("/methode/{}/gebruiker_eckid", method_id.as_ref()),
             users,
         )
         .await?;
         Ok(())
     }
 
-    pub async fn remove_method_user_chain_ids(
+    pub async fn delete_method_user_chain_ids<S: AsRef<str>>(
         &self,
-        method_id: &str,
+        method_id: S,
+    ) -> crate::Result<()> {
+        self.delete(&format!("/methode/{}/gebruiker_eckid", method_id.as_ref()))
+            .await?;
+        Ok(())
+    }
+
+    pub async fn add_method_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
         users: &UserChainIdList,
     ) -> crate::Result<()> {
         self.post(
-            &format!("/methode/{method_id}/gebruiker_eckid/removelist"),
+            &format!("/methode/{}/gebruiker_eckid/addlist", method_id.as_ref()),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn remove_method_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!("/methode/{}/gebruiker_eckid/removelist", method_id.as_ref()),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    /*
+     * Product management
+     */
+
+    pub async fn get_products<S: AsRef<str>>(
+        &self,
+        method_id: S,
+    ) -> crate::Result<ProductDetailsList> {
+        let response = self
+            .get(&format!("/methode/{}/product", method_id.as_ref()))
+            .await?;
+        response
+            .json::<ProductDetailsList>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn get_product<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<ProductDetails> {
+        let response = self
+            .get(&format!(
+                "/methode/{}/product/{}",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ))
+            .await?;
+        response
+            .json::<ProductDetails>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn post_product<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product: &ProductDetails,
+    ) -> crate::Result<()> {
+        self.post(&format!("/methode/{}/product", method_id.as_ref()), product)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn put_product<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product: &ProductDetails,
+    ) -> crate::Result<()> {
+        self.put(
+            &format!("/methode/{}/product/{}", method_id.as_ref(), product.id),
+            product,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete_product<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<()> {
+        self.delete(&format!(
+            "/methode/{}/product/{}",
+            method_id.as_ref(),
+            product_id.as_ref()
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn get_product_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<UserIdList> {
+        let response = self
+            .get(&format!(
+                "/methode/{}/product/{}/gebruiker",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ))
+            .await?;
+        response
+            .json::<UserIdList>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn put_product_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.put(
+            &format!(
+                "/methode/{}/product/{}/gebruiker",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete_product_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<()> {
+        self.delete(&format!(
+            "/methode/{}/product/{}/gebruiker",
+            method_id.as_ref(),
+            product_id.as_ref()
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn add_product_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!(
+                "/methode/{}/product/{}/gebruiker/addlist",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn remove_product_user_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!(
+                "/methode/{}/product/{}/gebruiker/removelist",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn get_product_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<UserChainIdList> {
+        let response = self
+            .get(&format!(
+                "/methode/{}/product/{}/gebruiker_eckid",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ))
+            .await?;
+        response
+            .json::<UserChainIdList>()
+            .await
+            .map_err(|source| Error::DecodeResponse(source).into())
+    }
+
+    pub async fn put_product_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.put(
+            &format!(
+                "/methode/{}/product/{}/gebruiker_eckid",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete_product_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+    ) -> crate::Result<()> {
+        self.delete(&format!(
+            "/methode/{}/product/{}/gebruiker_eckid",
+            method_id.as_ref(),
+            product_id.as_ref()
+        ))
+        .await?;
+        Ok(())
+    }
+
+    pub async fn add_product_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!(
+                "/methode/{}/product/{}/gebruiker_eckid/addlist",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
+            users,
+        )
+        .await?;
+        Ok(())
+    }
+
+    pub async fn remove_product_user_chain_ids<S: AsRef<str>>(
+        &self,
+        method_id: S,
+        product_id: S,
+        users: &UserChainIdList,
+    ) -> crate::Result<()> {
+        self.post(
+            &format!(
+                "/methode/{}/product/{}/gebruiker_eckid/removelist",
+                method_id.as_ref(),
+                product_id.as_ref()
+            ),
             users,
         )
         .await?;

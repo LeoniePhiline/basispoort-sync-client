@@ -14,12 +14,16 @@ mod tests {
 
     use dotenvy::dotenv;
 
-    use crate::hosted_sites::{HostedSitesClient, MethodDetails, SiteTag, UserIdList, UserChainId, UserChainIdList};
+    use crate::hosted_sites::{
+        HostedSitesClient, MethodDetails, ProductDetails, SiteTag, UserChainId, UserChainIdList,
+        UserIdList,
+    };
     use crate::rest::RestClient;
 
     use super::*;
 
     const METHOD_ID: &str = "abcdef123456";
+    const PRODUCT_ID: &str = "123456abcdef";
 
     fn make_rest_client() -> Result<RestClient> {
         rest::RestClientBuilder::new(
@@ -37,13 +41,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn get_all_methods() -> Result<()> {
+    async fn get_methods() -> Result<()> {
         dotenv().ok();
 
         let rest_client = make_rest_client()?;
-        let all_methods = make_sites_client(&rest_client)?.get_methods().await?;
+        let methods = make_sites_client(&rest_client)?.get_methods().await?;
 
-        println!("all_methods: {:#?}", all_methods);
+        println!("methods: {:#?}", methods);
 
         Ok(())
     }
@@ -178,7 +182,11 @@ mod tests {
         dotenv().ok();
 
         // TODO: How do valid chain IDs look?
-        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/abc".into() }].into();
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/abc".into(),
+        }]
+        .into();
         println!("{users:#?}");
 
         let rest_client = make_rest_client()?;
@@ -202,21 +210,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn delete_method_user_chain_ids() -> crate::Result<()> {
-        dotenv().ok();
-
-        let rest_client = make_rest_client()?;
-        make_sites_client(&rest_client)?
-            .delete_method_user_chain_ids(METHOD_ID)
-            .await
-    }
-
-    #[tokio::test]
     async fn add_method_user_chain_ids() -> crate::Result<()> {
         dotenv().ok();
 
         // TODO: How do valid chain IDs look?
-        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/def".into() }].into();
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/def".into(),
+        }]
+        .into();
         println!("{users:#?}");
 
         let rest_client = make_rest_client()?;
@@ -230,7 +232,11 @@ mod tests {
         dotenv().ok();
 
         // TODO: How do valid chain IDs look?
-        let users: UserChainIdList = vec![UserChainId { institution_id: 123, chain_id: "https://ketenid.nl/def".into() }].into();
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/def".into(),
+        }]
+        .into();
         println!("{users:#?}");
 
         let rest_client = make_rest_client()?;
@@ -239,6 +245,244 @@ mod tests {
             .await
     }
 
+    #[tokio::test]
+    async fn delete_method_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_method_user_chain_ids(METHOD_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn get_products() -> Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let products = make_sites_client(&rest_client)?
+            .get_products(METHOD_ID)
+            .await?;
+
+        println!("products of {}: {:#?}", METHOD_ID, products);
+
+        Ok(())
+    }
+
+    // TODO: Make an integration tests which posts a product, then fetches it. (Then modifies it, adds, removes users, then deletes it.)
+    #[tokio::test]
+    async fn post_product() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        dotenv().ok();
+
+        let mut icon_data = Vec::new();
+        File::open("./tests/assets/icon_site_post.svg")?.read_to_end(&mut icon_data)?;
+
+        let product = ProductDetails {
+            id: PRODUCT_ID.into(),
+            name: "Test (POST)".into(),
+            icon: Some(format!("image/svg+xml,{}", base64::encode(icon_data))),
+            url: env::var("HOSTED_SITES_PRODUCT_URL_POST").unwrap(),
+            tags: vec![SiteTag::TeacherApplication],
+        };
+        println!("{product:?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .post_product(METHOD_ID, &product)
+            .await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn get_product() -> Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let product = make_sites_client(&rest_client)?
+            .get_product(METHOD_ID, PRODUCT_ID)
+            .await?;
+
+        println!("product: {:#?}", product);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn put_product() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        dotenv().ok();
+
+        let mut icon_data = Vec::new();
+        File::open("./tests/assets/icon_site_put.svg")?.read_to_end(&mut icon_data)?;
+
+        let product = ProductDetails {
+            id: PRODUCT_ID.into(),
+            name: "Test (PUT)".into(),
+            icon: Some(format!("image/svg+xml,{}", base64::encode(icon_data))),
+            url: env::var("HOSTED_SITES_PRODUCT_URL_PUT").unwrap(),
+            tags: vec![SiteTag::TeacherApplication],
+        };
+
+        println!("{product:?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .put_product(METHOD_ID, &product)
+            .await?;
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn put_product_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123, 456, 789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .put_product_user_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn get_product_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let users = make_sites_client(&rest_client)?
+            .get_product_user_ids(METHOD_ID, PRODUCT_ID)
+            .await?;
+
+        println!("users: {users:#?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn add_product_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123456, 456789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .add_product_user_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn remove_product_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let users: UserIdList = vec![123456, 456789].into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .remove_product_user_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn delete_product_user_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_product_user_ids(METHOD_ID, PRODUCT_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn put_product_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/abc".into(),
+        }]
+        .into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .put_product_user_chain_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn get_product_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        let users = make_sites_client(&rest_client)?
+            .get_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
+            .await?;
+
+        println!("users: {users:#?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn add_product_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/def".into(),
+        }]
+        .into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .add_product_user_chain_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn remove_product_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        // TODO: How do valid chain IDs look?
+        let users: UserChainIdList = vec![UserChainId {
+            institution_id: 123,
+            chain_id: "https://ketenid.nl/def".into(),
+        }]
+        .into();
+        println!("{users:#?}");
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .remove_product_user_chain_ids(METHOD_ID, PRODUCT_ID, &users)
+            .await
+    }
+
+    #[tokio::test]
+    async fn delete_product_user_chain_ids() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn delete_product() -> crate::Result<()> {
+        dotenv().ok();
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .delete_product(METHOD_ID, PRODUCT_ID)
+            .await
+    }
     #[tokio::test]
     async fn delete_method() -> crate::Result<()> {
         dotenv().ok();
