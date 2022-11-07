@@ -23,7 +23,8 @@ impl<'i> RestClientBuilder<'i> {
             environment,
             connect_timeout: Duration::from_secs(10),
             timeout: Duration::from_secs(30),
-            min_tls_version: reqwest::tls::Version::TLS_1_3,
+            // Basispoort does not support TLS 1.3 yet, so we cannot enforce it by default :(
+            min_tls_version: reqwest::tls::Version::TLS_1_2,
         }
     }
 
@@ -64,8 +65,7 @@ impl<'i> RestClientBuilder<'i> {
             .identity(identity)
             .connect_timeout(self.connect_timeout)
             .timeout(self.timeout)
-            // Basispoort does not support TLS 1.3 yet, so we cannot enforce it :(
-            .min_tls_version(reqwest::tls::Version::TLS_1_2)
+            .min_tls_version(self.min_tls_version)
             .build()
             .map_err(Error::BuildRequestClient)?;
 
