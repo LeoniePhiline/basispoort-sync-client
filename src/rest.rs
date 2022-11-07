@@ -9,7 +9,7 @@ use url::Host;
 use crate::error::{Error, ErrorResponse};
 
 pub struct RestClientBuilder<'i> {
-    identity_cert: &'i str,
+    identity_cert_file: &'i str,
     environment: Environment,
     connect_timeout: Duration,
     timeout: Duration,
@@ -17,9 +17,9 @@ pub struct RestClientBuilder<'i> {
 }
 
 impl<'i> RestClientBuilder<'i> {
-    pub fn new(identity_cert: &'i str, environment: Environment) -> Self {
+    pub fn new(identity_cert_file: &'i str, environment: Environment) -> Self {
         Self {
-            identity_cert,
+            identity_cert_file,
             environment,
             connect_timeout: Duration::from_secs(10),
             timeout: Duration::from_secs(30),
@@ -45,19 +45,19 @@ impl<'i> RestClientBuilder<'i> {
 
     pub fn build(&self) -> crate::Result<RestClient> {
         let mut cert = Vec::new();
-        File::open(self.identity_cert)
+        File::open(self.identity_cert_file)
             .map_err(|source| Error::OpenIdentityCertFile {
-                path: self.identity_cert.into(),
+                path: self.identity_cert_file.into(),
                 source,
             })?
             .read_to_end(&mut cert)
             .map_err(|source| Error::ReadIdentityCertFile {
-                path: self.identity_cert.into(),
+                path: self.identity_cert_file.into(),
                 source,
             })?;
         let identity =
             Identity::from_pem(&cert).map_err(|source| Error::ParseIdentityCertFile {
-                path: self.identity_cert.into(),
+                path: self.identity_cert_file.into(),
                 source,
             })?;
 
