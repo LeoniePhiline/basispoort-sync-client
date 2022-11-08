@@ -46,7 +46,7 @@ pub enum SiteTag {
     TeacherApplication,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct UserIdList {
     #[serde(rename = "gebruikers")]
     pub users: Vec<u64>,
@@ -72,7 +72,7 @@ impl Deref for UserIdList {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 pub struct UserChainIdList {
     #[serde(rename = "gebruikers")]
     pub users: Vec<UserChainId>,
@@ -104,6 +104,18 @@ pub struct UserChainId {
     pub institution_id: u64,
     #[serde(rename = "eckId")]
     pub chain_id: String,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct BulkRequest {
+    #[serde(rename = "methodes")]
+    pub method_ids: Vec<String>,
+    #[serde(rename = "producten")]
+    pub product_ids: Vec<String>,
+    #[serde(rename = "gebruikers")]
+    pub user_ids: Vec<u64>,
+    #[serde(rename = "gebruikerEckIds")]
+    pub chain_ids: Vec<UserChainId>,
 }
 
 pub struct HostedSitesClient<'a> {
@@ -542,6 +554,20 @@ impl<'a> HostedSitesClient<'a> {
             users,
         )
         .await?;
+        Ok(())
+    }
+
+    /*
+     * Bulk actions
+     */
+
+    pub async fn bulk_grant_permissions(&self, bulk_request: &BulkRequest) -> crate::Result<()> {
+        self.post("/permissions/grant", bulk_request).await?;
+        Ok(())
+    }
+
+    pub async fn bulk_revoke_permissions(&self, bulk_request: &BulkRequest) -> crate::Result<()> {
+        self.post("/permissions/revoke", bulk_request).await?;
         Ok(())
     }
 }

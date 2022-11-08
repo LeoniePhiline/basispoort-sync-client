@@ -15,8 +15,8 @@ mod tests {
     use dotenvy::dotenv;
 
     use crate::hosted_sites::{
-        HostedSitesClient, MethodDetails, ProductDetails, SiteTag, UserChainId, UserChainIdList,
-        UserIdList,
+        BulkRequest, HostedSitesClient, MethodDetails, ProductDetails, SiteTag, UserChainId,
+        UserChainIdList, UserIdList,
     };
     use crate::rest::RestClient;
 
@@ -471,6 +471,58 @@ mod tests {
         let rest_client = make_rest_client()?;
         make_sites_client(&rest_client)?
             .delete_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
+            .await
+    }
+
+    #[tokio::test]
+    async fn bulk_grant_permissions() -> crate::Result<()> {
+        dotenv().ok();
+
+        let bulk_request = BulkRequest {
+            method_ids: vec![METHOD_ID.into()],
+            product_ids: vec![PRODUCT_ID.into()],
+            user_ids: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+            chain_ids: vec![
+                UserChainId {
+                    institution_id: 123,
+                    chain_id: "https://ketenid.nl/abc".into(),
+                },
+                UserChainId {
+                    institution_id: 123,
+                    chain_id: "https://ketenid.nl/def".into(),
+                },
+            ],
+        };
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .bulk_grant_permissions(&bulk_request)
+            .await
+    }
+
+    #[tokio::test]
+    async fn bulk_revoke_permissions() -> crate::Result<()> {
+        dotenv().ok();
+
+        let bulk_request = BulkRequest {
+            method_ids: vec![METHOD_ID.into()],
+            product_ids: vec![PRODUCT_ID.into()],
+            user_ids: vec![2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22],
+            chain_ids: vec![
+                UserChainId {
+                    institution_id: 123,
+                    chain_id: "https://ketenid.nl/abc".into(),
+                },
+                UserChainId {
+                    institution_id: 123,
+                    chain_id: "https://ketenid.nl/123".into(),
+                },
+            ],
+        };
+
+        let rest_client = make_rest_client()?;
+        make_sites_client(&rest_client)?
+            .bulk_revoke_permissions(&bulk_request)
             .await
     }
 
