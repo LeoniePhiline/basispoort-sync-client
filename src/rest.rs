@@ -1,13 +1,17 @@
-use std::fs::File;
-use std::io::Read;
+use std::fmt::Debug;
+use std::str::FromStr;
 use std::time::Duration;
 
 use reqwest::{Identity, Response, Url};
 use serde::Serialize;
+use thiserror::Error;
+use tokio::{fs::File, io::AsyncReadExt};
+use tracing::instrument;
 use url::Host;
 
 use crate::error::{Error, ErrorResponse};
 
+#[derive(Debug)]
 pub struct RestClientBuilder<'i> {
     identity_cert_file: &'i str,
     environment: Environment,
@@ -17,6 +21,7 @@ pub struct RestClientBuilder<'i> {
 }
 
 impl<'i> RestClientBuilder<'i> {
+    #[instrument]
     pub fn new(identity_cert_file: &'i str, environment: Environment) -> Self {
         Self {
             identity_cert_file,
@@ -43,14 +48,17 @@ impl<'i> RestClientBuilder<'i> {
         self
     }
 
-    pub fn build(&self) -> crate::Result<RestClient> {
+    #[instrument]
+    pub async fn build(&self) -> crate::Result<RestClient> {
         let mut cert = Vec::new();
         File::open(self.identity_cert_file)
+            .await
             .map_err(|source| Error::OpenIdentityCertFile {
                 path: self.identity_cert_file.into(),
                 source,
             })?
             .read_to_end(&mut cert)
+            .await
             .map_err(|source| Error::ReadIdentityCertFile {
                 path: self.identity_cert_file.into(),
                 source,
@@ -69,17 +77,14 @@ impl<'i> RestClientBuilder<'i> {
             .build()
             .map_err(Error::BuildRequestClient)?;
 
-        let host = match self.environment {
-            Environment::Test => Host::Domain("test-rest.basispoort.nl"),
-            Environment::Acceptance => Host::Domain("acceptatie-rest.basispoort.nl"),
-            Environment::Staging => Host::Domain("staging-rest.basispoort.nl"),
-            Environment::Production => Host::Domain("rest.basispoort.nl"),
-        };
-
-        Ok(RestClient { client, host })
+        Ok(RestClient {
+            client,
+            host: self.environment.domain(),
+        })
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Environment {
     Test,
     Acceptance,
@@ -87,6 +92,39 @@ pub enum Environment {
     Production,
 }
 
+#[derive(Error, Debug)]
+pub enum ParseEnvironmentError {
+    #[error("'{0}' is not a valid environment string")]
+    InvalidEnvironmentString(String),
+}
+
+impl FromStr for Environment {
+    type Err = ParseEnvironmentError;
+
+    #[instrument]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "test" => Self::Test,
+            "acceptance" => Self::Acceptance,
+            "staging" => Self::Staging,
+            "production" => Self::Production,
+            s => return Err(ParseEnvironmentError::InvalidEnvironmentString(s.into())),
+        })
+    }
+}
+
+impl Environment {
+    pub fn domain(&self) -> Host<&'static str> {
+        match self {
+            Environment::Test => Host::Domain("test-rest.basispoort.nl"),
+            Environment::Acceptance => Host::Domain("acceptatie-rest.basispoort.nl"),
+            Environment::Staging => Host::Domain("staging-rest.basispoort.nl"),
+            Environment::Production => Host::Domain("rest.basispoort.nl"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct RestClient {
     client: reqwest::Client,
     pub host: Host<&'static str>,
@@ -94,16 +132,18 @@ pub struct RestClient {
 
 impl RestClient {
     // TODO: Unit test
+    #[instrument]
     fn make_url(&self, path: &str) -> crate::Result<Url> {
         let url = format!("https://{}{}", &self.host, &path);
         Url::parse(&url).map_err(|source| Error::ParseUrl { url, source }.into())
     }
 
+    #[instrument]
     async fn error_status(&self, url: Url, response: Response) -> crate::Result<Response> {
         let status = response.status();
         match response.error_for_status_ref() {
             Err(source) => {
-                let response_bytes = response.bytes().await.map_err(Error::DecodeResponse)?;
+                let response_bytes = response.bytes().await.map_err(Error::ReceiveResponseBody)?;
 
                 let error_response = match serde_json::from_slice(&response_bytes) {
                     Ok(error_response) => ErrorResponse::JSON(error_response),
@@ -121,6 +161,7 @@ impl RestClient {
         }
     }
 
+    #[instrument]
     pub async fn get(&self, path: &str) -> crate::Result<Response> {
         let url = self.make_url(path)?;
         let response = self
@@ -133,7 +174,8 @@ impl RestClient {
         self.error_status(url, response).await
     }
 
-    pub async fn post<T: Serialize + ?Sized>(
+    #[instrument]
+    pub async fn post<T: Serialize + Debug + ?Sized>(
         &self,
         path: &str,
         payload: &T,
@@ -150,7 +192,8 @@ impl RestClient {
         self.error_status(url, response).await
     }
 
-    pub async fn put<T: Serialize + ?Sized>(
+    #[instrument]
+    pub async fn put<T: Serialize + Debug + ?Sized>(
         &self,
         path: &str,
         payload: &T,
@@ -167,6 +210,7 @@ impl RestClient {
         self.error_status(url, response).await
     }
 
+    #[instrument]
     pub async fn delete(&self, path: &str) -> crate::Result<Response> {
         let url = self.make_url(path)?;
         let response = self
@@ -178,4 +222,11 @@ impl RestClient {
 
         self.error_status(url, response).await
     }
+}
+
+#[cfg(test)]
+mod tests {
+    // use super::*;
+
+    // TODO: Test make_url
 }
