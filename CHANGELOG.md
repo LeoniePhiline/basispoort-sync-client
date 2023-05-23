@@ -13,7 +13,7 @@ _(none)_
 
 ### Changed
 
-_(none)_
+- Bumped tokio to `"1.23.1"`, due to [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html).
 
 ### Fixed
 
