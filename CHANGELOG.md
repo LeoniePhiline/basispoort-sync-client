@@ -13,7 +13,7 @@ _(none)_
 
 ### Changed
 
-- Bumped tokio to `"1.23.1"`, due to [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html).
+_(none)_
 
 ### Fixed
 
@@ -22,6 +22,12 @@ _(none)_
 ### Removed
 
 _(none)_
+
+## [0.2.2] - 2023-05-24
+
+### Changed
+
+- Bumped tokio to `"1.23.1"`, due to [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html).
 
 ## [0.2.1] - 2023-05-24
 
@@ -52,7 +58,8 @@ _(none)_
 
 - Initial implementation.
 
-[unreleased]: https://github.com/LeoniePhiline/showcase-dl/compare/v0.2.1...HEAD
-[0.2.0]: https://github.com/LeoniePhiline/elopage-dl/releases/tag/v0.2.1
+[unreleased]: https://github.com/LeoniePhiline/showcase-dl/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/LeoniePhiline/elopage-dl/releases/tag/v0.2.2
+[0.2.1]: https://github.com/LeoniePhiline/elopage-dl/releases/tag/v0.2.1
 [0.2.0]: https://github.com/LeoniePhiline/elopage-dl/releases/tag/v0.2.0
 [0.1.0]: https://github.com/LeoniePhiline/elopage-dl/releases/tag/v0.1.0
