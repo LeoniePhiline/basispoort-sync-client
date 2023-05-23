@@ -1,9 +1,10 @@
 [package]
-authors = ["Leonie Philine Bitto <awoo@posteo.de>"]
+name = "basispoort-sync-client"
 description = "An API client to help synchronize institution data with the Basispoort educational material SSO service."
 edition = "2021"
 license = "MPL-2.0"
-name = "basispoort-sync-client"
+documentation = "https://docs.rs/basispoort-sync-client"
+repository = "https://github.com/LeoniePhiline/basispoort-sync-client"
 version = "0.1.0"
 
 [dependencies]
