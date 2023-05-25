@@ -11,8 +11,8 @@ use tracing_error::ErrorLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
 
-use basispoort_sync_client::hosted_sites::{
-    BulkRequest, HostedSitesClient, MethodDetails, MethodDetailsList, ProductDetails,
+use basispoort_sync_client::hosted_license_provider::{
+    BulkRequest, HostedLicenseProviderClient, MethodDetails, MethodDetailsList, ProductDetails,
     ProductDetailsList, /* UserChainId, UserChainIdList, */ UserIdList,
 };
 use basispoort_sync_client::rest::{RestClient, RestClientBuilder};
@@ -112,13 +112,11 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     info!("Initialize tracing.");
     tracing_init()?;
 
-    info!("Create an authenticated REST client for the env-configured Basispoort environment.");
+    info!("Create an authenticated REST API client for the env-configured Basispoort environment.");
     let rest_client = make_rest_client().await?;
 
-    info!(
-        "Create a specialized \"Hosted Lika\" REST client, wrapping the authenticated REST client."
-    );
-    let client = make_sites_client(&rest_client)?;
+    info!("Create a hosted license provider (\"Hosted Lika\") service REST API client.");
+    let client = make_hosted_license_provider_service_client(&rest_client)?;
 
     info!("Clean up possible left-overs from a previous failed test.");
     delete_method(&client).await.ok();
@@ -383,18 +381,21 @@ async fn make_rest_client() -> Result<RestClient> {
 }
 
 #[instrument]
-fn make_sites_client(rest_client: &RestClient) -> Result<HostedSitesClient<'_>> {
-    Ok(HostedSitesClient::new(
+fn make_hosted_license_provider_service_client(
+    rest_client: &RestClient,
+) -> Result<HostedLicenseProviderClient<'_>> {
+    Ok(HostedLicenseProviderClient::new(
         rest_client,
-        &env::var("HOSTED_SITES_IDENTITY_CODE")
-            .wrap_err("could not get environment variable `HOSTED_SITES_IDENTITY_CODE`")?,
+        &env::var("HOSTED_LICENSE_PROVIDER_IDENTITY_CODE").wrap_err(
+            "could not get environment variable `HOSTED_LICENSE_PROVIDER_IDENTITY_CODE`",
+        )?,
     ))
 }
 
 // == Method ==
 
 #[instrument]
-async fn get_methods(client: &HostedSitesClient<'_>) -> Result<MethodDetailsList> {
+async fn get_methods(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDetailsList> {
     debug!("Getting all methods...");
     let methods_list = client.get_methods().await?;
 
@@ -405,7 +406,7 @@ async fn get_methods(client: &HostedSitesClient<'_>) -> Result<MethodDetailsList
 }
 
 #[instrument]
-async fn get_method(client: &HostedSitesClient<'_>) -> Result<MethodDetails> {
+async fn get_method(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDetails> {
     debug!("Getting method '{METHOD_ID}'...");
     let method = client.get_method(METHOD_ID).await?;
 
@@ -417,13 +418,14 @@ async fn get_method(client: &HostedSitesClient<'_>) -> Result<MethodDetails> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn post_method(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn post_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating method '{METHOD_ID}'...");
 
     let method = MethodDetails::new(METHOD_ID, METHOD_POST_NAME)
         .with_url(
-            &env::var("HOSTED_SITES_METHOD_URL_POST")
-                .wrap_err("could not get environment variable `HOSTED_SITES_METHOD_URL_POST`")?,
+            &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_POST").wrap_err(
+                "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
+            )?,
         )?
         .with_icon_from_file(Path::new("./tests/assets/icon_site_post.svg"))
         .await?
@@ -444,13 +446,14 @@ async fn post_method(client: &HostedSitesClient<'_>) -> Result<()> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_method(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn put_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) method '{METHOD_ID}'...");
 
     let method = MethodDetails::new(METHOD_ID, METHOD_PUT_NAME)
         .with_url(
-            &env::var("HOSTED_SITES_METHOD_URL_PUT")
-                .wrap_err("could not get environment variable `HOSTED_SITES_METHOD_URL_POST`")?,
+            &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_PUT").wrap_err(
+                "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
+            )?,
         )?
         .with_icon_from_file(Path::new("./tests/assets/icon_site_put.svg"))
         .await?
@@ -470,7 +473,7 @@ async fn put_method(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn delete_method(client: &HostedSitesClient<'_>) -> crate::Result<()> {
+async fn delete_method(client: &HostedLicenseProviderClient<'_>) -> crate::Result<()> {
     debug!("Deleting method '{METHOD_ID}'...");
 
     client.delete_method(METHOD_ID).await?;
@@ -483,7 +486,7 @@ async fn delete_method(client: &HostedSitesClient<'_>) -> crate::Result<()> {
 // == Method users (classic ID) ==
 
 #[instrument]
-async fn get_method_user_ids(client: &HostedSitesClient<'_>) -> Result<UserIdList> {
+async fn get_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<UserIdList> {
     debug!("Getting user IDs with access to method '{METHOD_ID}'...");
 
     let users = client.get_method_user_ids(METHOD_ID).await?;
@@ -496,7 +499,7 @@ async fn get_method_user_ids(client: &HostedSitesClient<'_>) -> Result<UserIdLis
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn put_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}...");
@@ -517,7 +520,7 @@ async fn put_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn add_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn add_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_ADD_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to method '{METHOD_ID}' to additional user IDs {user_ids_fmt}...");
@@ -538,7 +541,7 @@ async fn add_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn remove_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn remove_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Revoking access to method '{METHOD_ID}' from user IDs {user_ids_fmt}...");
@@ -559,7 +562,7 @@ async fn remove_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Revoking all access to method '{METHOD_ID}'...");
 
     client.delete_method_user_ids(METHOD_ID).await?;
@@ -574,7 +577,7 @@ async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
 
 // #[instrument]
-// async fn get_method_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn get_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     let users = client.get_method_user_chain_ids(METHOD_ID).await?;
 
 //     println!("users: {users:#?}");
@@ -584,7 +587,7 @@ async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 // #[instrument]
-// async fn put_method_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn put_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -597,7 +600,7 @@ async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn add_method_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn add_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -610,7 +613,7 @@ async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn remove_method_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn remove_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -623,14 +626,14 @@ async fn delete_method_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn delete_method_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn delete_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     client.delete_method_user_chain_ids(METHOD_ID).await
 // }
 
 // == Product ==
 
 #[instrument]
-async fn get_products(client: &HostedSitesClient<'_>) -> Result<ProductDetailsList> {
+async fn get_products(client: &HostedLicenseProviderClient<'_>) -> Result<ProductDetailsList> {
     debug!("Getting all products of method '{METHOD_ID}'...");
     let products_list = client.get_products(METHOD_ID).await?;
 
@@ -641,7 +644,7 @@ async fn get_products(client: &HostedSitesClient<'_>) -> Result<ProductDetailsLi
 }
 
 #[instrument]
-async fn get_product(client: &HostedSitesClient<'_>) -> Result<ProductDetails> {
+async fn get_product(client: &HostedLicenseProviderClient<'_>) -> Result<ProductDetails> {
     debug!("Getting product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
     let product = client.get_product(METHOD_ID, PRODUCT_ID).await?;
 
@@ -653,14 +656,15 @@ async fn get_product(client: &HostedSitesClient<'_>) -> Result<ProductDetails> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn post_product(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn post_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
     let product = ProductDetails::new(
         PRODUCT_ID,
         PRODUCT_POST_NAME,
-        &env::var("HOSTED_SITES_PRODUCT_URL_POST")
-            .wrap_err("could not get environment variable `HOSTED_SITES_PRODUCT_URL_POST`")?,
+        &env::var("HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST").wrap_err(
+            "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
+        )?,
     )?
     .with_icon_from_file(Path::new("./tests/assets/icon_site_post.svg"))
     .await?
@@ -684,14 +688,15 @@ async fn post_product(client: &HostedSitesClient<'_>) -> Result<()> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_product(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn put_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
     let product = ProductDetails::new(
         PRODUCT_ID,
         PRODUCT_PUT_NAME,
-        &env::var("HOSTED_SITES_PRODUCT_URL_PUT")
-            .wrap_err("could not get environment variable `HOSTED_SITES_PRODUCT_URL_POST`")?,
+        &env::var("HOSTED_LICENSE_PROVIDER_PRODUCT_URL_PUT").wrap_err(
+            "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
+        )?,
     )?
     .with_icon_from_file(Path::new("./tests/assets/icon_site_put.svg"))
     .await?
@@ -714,7 +719,7 @@ async fn put_product(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn delete_product(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn delete_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Deleting product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
     client.delete_product(METHOD_ID, PRODUCT_ID).await?;
@@ -727,7 +732,7 @@ async fn delete_product(client: &HostedSitesClient<'_>) -> Result<()> {
 // == Product users (classic ID) ==
 
 #[instrument]
-async fn get_product_user_ids(client: &HostedSitesClient<'_>) -> Result<UserIdList> {
+async fn get_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<UserIdList> {
     debug!("Getting user IDs with access to product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
     let users = client.get_product_user_ids(METHOD_ID, PRODUCT_ID).await?;
@@ -740,7 +745,7 @@ async fn get_product_user_ids(client: &HostedSitesClient<'_>) -> Result<UserIdLi
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn put_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to product '{PRODUCT_ID}' of method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}...");
@@ -763,7 +768,7 @@ async fn put_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn add_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn add_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_ADD_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to product '{PRODUCT_ID}' of method '{METHOD_ID}' to additional user IDs {user_ids_fmt}...");
@@ -786,7 +791,7 @@ async fn add_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn remove_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn remove_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Revoking access to product '{PRODUCT_ID}' of method '{METHOD_ID}' from user IDs {user_ids_fmt}...");
@@ -809,7 +814,7 @@ async fn remove_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Revoking all access to product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
     client
@@ -826,7 +831,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
 
 // #[instrument]
-// async fn get_product_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn get_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     let users = client
 //         .get_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
 //         .await?;
@@ -838,7 +843,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 
 // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 // #[instrument]
-// async fn put_product_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn put_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -853,7 +858,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn add_product_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn add_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -868,7 +873,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn remove_product_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn remove_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -883,7 +888,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // }
 
 // #[instrument]
-// async fn delete_product_user_chain_ids(client: &HostedSitesClient<'_>) -> Result<()> {
+// async fn delete_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     client
 //         .delete_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
 //         .await
@@ -892,7 +897,7 @@ async fn delete_product_user_ids(client: &HostedSitesClient<'_>) -> Result<()> {
 // == Method and product users (bulk request) ==
 
 #[instrument]
-async fn bulk_grant_permissions(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn bulk_grant_permissions(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(BULK_GRANT_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to product '{PRODUCT_ID}' and method '{METHOD_ID}' to bulk user IDs {user_ids_fmt}...");
@@ -928,7 +933,7 @@ async fn bulk_grant_permissions(client: &HostedSitesClient<'_>) -> Result<()> {
 }
 
 #[instrument]
-async fn bulk_revoke_permissions(client: &HostedSitesClient<'_>) -> Result<()> {
+async fn bulk_revoke_permissions(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(BULK_REVOKE_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Revoking access to product '{PRODUCT_ID}' and method '{METHOD_ID}' from bulk user IDs {user_ids_fmt}...");

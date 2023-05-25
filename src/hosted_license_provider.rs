@@ -215,9 +215,9 @@ pub struct BulkRequest {
     pub chain_ids: Vec<UserChainId>,
 }
 
-// TODO: Rename? HostedLicenseBroker? (Lika ≈ LicenseBroker - "Kantoor" makes no sense.)
+/// An API client for the hosted license provider service ("Hosted Lika").
 #[derive(Debug)]
-pub struct HostedSitesClient<'a> {
+pub struct HostedLicenseProviderClient<'a> {
     rest_client: &'a rest::RestClient,
     base_path: &'static str,
     identity_code: String,
@@ -225,13 +225,13 @@ pub struct HostedSitesClient<'a> {
 
 // TODO: Ensure method ID is valid and does not contain a slash; fail with an appropriate error otherwise.
 // TODO: Ensure all validation as documented.
-impl<'a> HostedSitesClient<'a> {
+impl<'a> HostedLicenseProviderClient<'a> {
     #[instrument]
     pub fn new<S: Into<String> + Debug>(
         rest_client: &'a rest::RestClient,
         identity_code: S,
     ) -> Self {
-        HostedSitesClient {
+        HostedLicenseProviderClient {
             rest_client,
             base_path: "/hosted-lika/management/lika",
             identity_code: identity_code.into(),

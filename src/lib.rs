@@ -1,7 +1,7 @@
 pub use url::Url;
 
 pub mod error;
-pub mod hosted_sites;
+pub mod hosted_license_provider;
 pub mod institutions;
 pub mod rest;
 
