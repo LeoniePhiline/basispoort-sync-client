@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add support for `code` and `icon_url` fields on `MethodDetails` and `ProductDetails`.
 - Add `cargo test` as pre-release hook.
 
 ## [0.3.0] - 2023-05-25

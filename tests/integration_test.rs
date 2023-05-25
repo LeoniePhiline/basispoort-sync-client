@@ -20,20 +20,32 @@ use basispoort_sync_client::rest::{RestClient, RestClientBuilder};
 const METHOD_ID: &str = "lifecycle_integration_test_method";
 
 const METHOD_CREATE_NAME: &str = "Test method (POST)";
+const METHOD_CREATE_CODE: &str = "method-create";
+
 const METHOD_UPDATE_NAME: &str = "Test method (PUT)";
+const METHOD_UPDATE_CODE: &str = "method-update";
 
 const METHOD_SET_USER_IDS: [u64; 3] = [123, 456, 789];
 const METHOD_ADD_USER_IDS: [u64; 2] = [123456, 456789];
 
 const PRODUCT_ID: &str = "lifecycle_integration_test_product";
+
 const PRODUCT_CREATE_NAME: &str = "Test product (POST)";
+const PRODUCT_CREATE_CODE: &str = "product-create";
+
 const PRODUCT_UPDATE_NAME: &str = "Test product (PUT)";
+const PRODUCT_UPDATE_CODE: &str = "product-update";
 
 const PRODUCT_SET_USER_IDS: [u64; 3] = [321, 654, 987];
 const PRODUCT_ADD_USER_IDS: [u64; 2] = [654321, 987654];
 
 const BULK_GRANT_USER_IDS: [u64; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 const BULK_REVOKE_USER_IDS: [u64; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+
+const APPLICATION_CREATE_ICON_URL: &str =
+    "https://www.example.com/path/icon.svg?query=value#anchor";
+const APPLICATION_UPDATE_ICON_URL: &str =
+    "https://www.example.com/path/icon.png?query=value#anchor";
 
 /// "Hosted Lika" integration test, full application (method, product) lifecycle.
 ///
@@ -137,6 +149,11 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let method = get_method(&client).await?;
     assert_eq!(method.id, METHOD_ID);
     assert_eq!(method.name, METHOD_CREATE_NAME);
+    assert_eq!(method.code, Some(METHOD_CREATE_CODE.to_string()));
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
+    );
 
     info!("Modify method.");
     update_method(&client).await?;
@@ -145,6 +162,11 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let method = get_method(&client).await?;
     assert_eq!(method.id, METHOD_ID);
     assert_eq!(method.name, METHOD_UPDATE_NAME);
+    assert_eq!(method.code, Some(METHOD_UPDATE_CODE.to_string()));
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
+    );
 
     // == Method users (classic ID) ==
 
@@ -211,6 +233,11 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let product = get_product(&client).await?;
     assert_eq!(product.id, PRODUCT_ID);
     assert_eq!(product.name, PRODUCT_CREATE_NAME);
+    assert_eq!(product.code, Some(PRODUCT_CREATE_CODE.to_string()));
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
+    );
 
     info!("Modify product.");
     update_product(&client).await?;
@@ -219,6 +246,11 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let product = get_product(&client).await?;
     assert_eq!(product.id, PRODUCT_ID);
     assert_eq!(product.name, PRODUCT_UPDATE_NAME);
+    assert_eq!(product.code, Some(PRODUCT_UPDATE_CODE.to_string()));
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
+    );
 
     // == Product users (classic ID) ==
 
@@ -421,13 +453,15 @@ async fn create_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating method '{METHOD_ID}'...");
 
     let method = MethodDetails::new(METHOD_ID, METHOD_CREATE_NAME)
+        .with_code(METHOD_CREATE_CODE)
+        .with_icon_from_file(Path::new("./tests/assets/icon_application_create.svg"))
+        .await?
+        .with_icon_url(APPLICATION_CREATE_ICON_URL)?
         .with_url(
             &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_POST").wrap_err(
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
             )?,
         )?
-        .with_icon_from_file(Path::new("./tests/assets/icon_application_create.svg"))
-        .await?
         .into_teacher_application();
 
     trace!("Method (Debug): {method:#?}");
@@ -448,13 +482,15 @@ async fn update_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) method '{METHOD_ID}'...");
 
     let method = MethodDetails::new(METHOD_ID, METHOD_UPDATE_NAME)
+        .with_code(METHOD_UPDATE_CODE)
+        .with_icon_from_file(Path::new("./tests/assets/icon_application_update.svg"))
+        .await?
+        .with_icon_url(APPLICATION_UPDATE_ICON_URL)?
         .with_url(
             &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_PUT").wrap_err(
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
             )?,
         )?
-        .with_icon_from_file(Path::new("./tests/assets/icon_application_update.svg"))
-        .await?
         .into_teacher_application();
 
     trace!("Method (Debug): {method:#?}");
@@ -661,8 +697,10 @@ async fn create_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
     )?
+    .with_code(PRODUCT_CREATE_CODE)
     .with_icon_from_file(Path::new("./tests/assets/icon_application_create.svg"))
     .await?
+    .with_icon_url(APPLICATION_CREATE_ICON_URL)?
     .into_teacher_application();
 
     trace!("Product (Debug): {product:#?}");
@@ -692,8 +730,10 @@ async fn update_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
     )?
+    .with_code(PRODUCT_UPDATE_CODE)
     .with_icon_from_file(Path::new("./tests/assets/icon_application_update.svg"))
     .await?
+    .with_icon_url(APPLICATION_UPDATE_ICON_URL)?
     .into_teacher_application();
 
     trace!("Product (Debug): {product:#?}");
