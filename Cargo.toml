@@ -7,6 +7,11 @@ documentation = "https://docs.rs/basispoort-sync-client"
 repository = "https://github.com/LeoniePhiline/basispoort-sync-client"
 version = "0.2.2"
 
+[features]
+default = ["institutions", "hosted-license-provider"]
+institutions = []
+hosted-license-provider = []
+
 [dependencies]
 base64 = "0.21.1"
 reqwest = { version = "0.11.12", default-features = false, features = ["rustls-tls", "json"] }
