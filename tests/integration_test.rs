@@ -35,7 +35,7 @@ const PRODUCT_ADD_USER_IDS: [u64; 2] = [654321, 987654];
 const BULK_GRANT_USER_IDS: [u64; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 const BULK_REVOKE_USER_IDS: [u64; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
 
-/// "Hosted Lika" integration test, full lifecycle.
+/// "Hosted Lika" integration test, full application (method, product) lifecycle.
 ///
 /// # Test plan:
 ///
@@ -104,7 +104,7 @@ const BULK_REVOKE_USER_IDS: [u64; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]
 /// - Delete method.
 ///   - Fetch methods list (confirm removed).
 #[tokio::test]
-async fn hosted_sites_lifecycle() -> Result<()> {
+async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     // == Setup ==
     info!("Load environment variables from `.env`.");
     dotenv().ok();
@@ -426,7 +426,7 @@ async fn create_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
             )?,
         )?
-        .with_icon_from_file(Path::new("./tests/assets/icon_site_post.svg"))
+        .with_icon_from_file(Path::new("./tests/assets/icon_application_create.svg"))
         .await?
         .into_teacher_application();
 
@@ -453,7 +453,7 @@ async fn update_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
             )?,
         )?
-        .with_icon_from_file(Path::new("./tests/assets/icon_site_put.svg"))
+        .with_icon_from_file(Path::new("./tests/assets/icon_application_update.svg"))
         .await?
         .into_teacher_application();
 
@@ -661,7 +661,7 @@ async fn create_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
     )?
-    .with_icon_from_file(Path::new("./tests/assets/icon_site_post.svg"))
+    .with_icon_from_file(Path::new("./tests/assets/icon_application_create.svg"))
     .await?
     .into_teacher_application();
 
@@ -692,7 +692,7 @@ async fn update_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
     )?
-    .with_icon_from_file(Path::new("./tests/assets/icon_site_put.svg"))
+    .with_icon_from_file(Path::new("./tests/assets/icon_application_update.svg"))
     .await?
     .into_teacher_application();
 
