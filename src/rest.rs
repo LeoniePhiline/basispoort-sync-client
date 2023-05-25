@@ -79,7 +79,7 @@ impl<'i> RestClientBuilder<'i> {
 
         Ok(RestClient {
             client,
-            host: self.environment.domain(),
+            base_url: self.environment.base_url(),
         })
     }
 }
@@ -114,12 +114,12 @@ impl FromStr for Environment {
 }
 
 impl Environment {
-    pub fn domain(&self) -> Host<&'static str> {
+    pub fn base_url(&self) -> Url {
         match self {
-            Environment::Test => Host::Domain("test-rest.basispoort.nl"),
-            Environment::Acceptance => Host::Domain("acceptatie-rest.basispoort.nl"),
-            Environment::Staging => Host::Domain("staging-rest.basispoort.nl"),
-            Environment::Production => Host::Domain("rest.basispoort.nl"),
+            Environment::Test => "https://test-rest.basispoort.nl".parse().unwrap(),
+            Environment::Acceptance => "https://acceptatie-rest.basispoort.nl".parse().unwrap(),
+            Environment::Staging => "https://staging-rest.basispoort.nl".parse().unwrap(),
+            Environment::Production => "https://rest.basispoort.nl".parse().unwrap(),
         }
     }
 }
@@ -127,15 +127,20 @@ impl Environment {
 #[derive(Debug)]
 pub struct RestClient {
     client: reqwest::Client,
-    pub host: Host<&'static str>,
+    pub base_url: Url,
 }
 
 impl RestClient {
     // TODO: Unit test
     #[instrument]
     fn make_url(&self, path: &str) -> crate::Result<Url> {
-        let url = format!("https://{}{}", &self.host, &path);
-        Url::parse(&url).map_err(|source| Error::ParseUrl { url, source }.into())
+        self.base_url.join(path).map_err(|source| {
+            Error::ParseUrl {
+                url: path.to_owned(),
+                source,
+            }
+            .into()
+        })
     }
 
     #[instrument]
