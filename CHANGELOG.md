@@ -8,50 +8,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- next-header -->
 ## [Unreleased] <!-- release-date -->
 
+### BREAKING CHANGES
+
+- Translate "Lika" as "License Provider". This renames `HostedSitesClient` to `HostedLicenseProviderClient`.
+
 ### Added 
 
-_(none)_
+- When `RUST_LOG=basispoort_sync_client=info` (or `debug`, `trace`), then the REST client will print the configured environment and base URL upon creation.
+- Introduce crate features to toggle `institutions` API client and `hosted-license-provider` API client on or off. On by default.
+- Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`.
+  - `post_method`: `create_method`
+  - `put_method`: `update_method`
+  - `put_method_user_ids`: `set_method_user_ids`
+  - `put_method_user_chain_ids`: `set_method_user_chain_ids`
+  - `post_product`: `create_product`
+  - `put_product`: `update_product`
+  - `put_method_user_ids`: `set_method_user_ids`
+  - `put_method_user_chain_ids`: `set_method_user_chain_ids`
+- Rename `site` (generic term over "methode", "product") to application. This renames `SiteTag` to `ApplicationTag`.
 
 ### Changed
 
-_(none)_
-
-### Fixed
-
-_(none)_
-
-### Removed
-
-_(none)_
+- Configure REST client with base URL rather than base hostname.
+- Change wording to present tense in `CHANGELOG.md`
 
 ## [0.2.2] - 2023-05-24
 
 ### Changed
 
-- Bumped tokio to `"1.23.1"`, due to [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html).
+- Bump tokio to `"1.23.1"`, due to [RUSTSEC-2023-0001](https://rustsec.org/advisories/RUSTSEC-2023-0001.html).
 
 ## [0.2.1] - 2023-05-24
 
 ### Added
 
-- Added some minor documentation.
+- Add some minor documentation.
 
 ## [0.2.0] - 2023-05-24
 
 ### Added
 
-- Added a `CHANGELOG.md`.
-- Implemented full "Hosted Lika" integration test.
-- Added builder-style methods to `MethodDetails` and `ProductDetails`.
+- Add a `CHANGELOG.md`.
+- Implement full "Hosted Lika" integration test.
+- Add builder-style methods to `MethodDetails` and `ProductDetails`.
 - `Environment`s can now be parsed from `&str`.
 
 ### Changed
 
-- Changed from `&str` and `String` paths to [`&Path`](https://doc.rust-lang.org/std/path/struct.Path.html) and [`PathBuf`](https://doc.rust-lang.org/std/path/struct.PathBuf.html).
-- Changed from `&str` and `String` URLs to [`url::Url`](https://docs.rs/url/latest/url/struct.Url.html), re-exported as `crate::Url`.
-- Updated dependencies.
-- Removed `impl Deref` from list response structs, as they are not smart pointers.
-- Changed reading certificate and icon files from blocking to async.
+- Change from `&str` and `String` paths to [`&Path`](https://doc.rust-lang.org/std/path/struct.Path.html) and [`PathBuf`](https://doc.rust-lang.org/std/path/struct.PathBuf.html).
+- Change from `&str` and `String` URLs to [`url::Url`](https://docs.rs/url/latest/url/struct.Url.html), re-exported as `crate::Url`.
+- Update dependencies.
+- Remove `impl Deref` from list response structs, as they are not smart pointers.
+- Change reading certificate and icon files from blocking to async.
 
 ## [0.1.0] - 2022-11-08
 
