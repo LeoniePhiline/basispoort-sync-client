@@ -297,16 +297,14 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn post_method(&self, method: &MethodDetails) -> crate::Result<()> {
+    pub async fn create_method(&self, method: &MethodDetails) -> crate::Result<()> {
         self.post("/methode", method).await?;
         Ok(())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_method(&self, method: &MethodDetails) -> crate::Result<()> {
+    pub async fn update_method(&self, method: &MethodDetails) -> crate::Result<()> {
         self.put(&format!("/methode/{}", method.id), method).await?;
         Ok(())
     }
@@ -332,9 +330,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_method_user_ids<S: AsRef<str> + Debug>(
+    pub async fn set_method_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         users: &UserIdList,
@@ -396,9 +393,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_method_user_chain_ids<S: AsRef<str> + Debug>(
+    pub async fn set_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         users: &UserChainIdList,
@@ -486,9 +482,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn post_product<S: AsRef<str> + Debug>(
+    pub async fn create_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         product: &ProductDetails,
@@ -498,9 +493,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
         Ok(())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_product<S: AsRef<str> + Debug>(
+    pub async fn update_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         product: &ProductDetails,
@@ -547,9 +541,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_product_user_ids<S: AsRef<str> + Debug>(
+    pub async fn set_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         product_id: S,
@@ -639,9 +632,8 @@ impl<'a> HostedLicenseProviderClient<'a> {
             .map_err(|source| Error::DecodeResponse(source).into())
     }
 
-    // TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
     #[instrument]
-    pub async fn put_product_user_chain_ids<S: AsRef<str> + Debug>(
+    pub async fn set_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
         product_id: S,

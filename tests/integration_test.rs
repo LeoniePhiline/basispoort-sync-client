@@ -19,15 +19,15 @@ use basispoort_sync_client::rest::{RestClient, RestClientBuilder};
 
 const METHOD_ID: &str = "lifecycle_integration_test_method";
 
-const METHOD_POST_NAME: &str = "Test method (POST)";
-const METHOD_PUT_NAME: &str = "Test method (PUT)";
+const METHOD_CREATE_NAME: &str = "Test method (POST)";
+const METHOD_UPDATE_NAME: &str = "Test method (PUT)";
 
 const METHOD_SET_USER_IDS: [u64; 3] = [123, 456, 789];
 const METHOD_ADD_USER_IDS: [u64; 2] = [123456, 456789];
 
 const PRODUCT_ID: &str = "lifecycle_integration_test_product";
-const PRODUCT_POST_NAME: &str = "Test product (POST)";
-const PRODUCT_PUT_NAME: &str = "Test product (PUT)";
+const PRODUCT_CREATE_NAME: &str = "Test product (POST)";
+const PRODUCT_UPDATE_NAME: &str = "Test product (PUT)";
 
 const PRODUCT_SET_USER_IDS: [u64; 3] = [321, 654, 987];
 const PRODUCT_ADD_USER_IDS: [u64; 2] = [654321, 987654];
@@ -124,7 +124,7 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     // == Method ==
 
     info!("Post a method.");
-    post_method(&client).await?;
+    create_method(&client).await?;
 
     debug!("Fetch methods list (confirm contained).");
     let methods_list = get_methods(&client).await?;
@@ -136,20 +136,20 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     debug!("Fetch method (confirm created).");
     let method = get_method(&client).await?;
     assert_eq!(method.id, METHOD_ID);
-    assert_eq!(method.name, METHOD_POST_NAME);
+    assert_eq!(method.name, METHOD_CREATE_NAME);
 
     info!("Modify method.");
-    put_method(&client).await?;
+    update_method(&client).await?;
 
     debug!("Fetch method (confirm modified).");
     let method = get_method(&client).await?;
     assert_eq!(method.id, METHOD_ID);
-    assert_eq!(method.name, METHOD_PUT_NAME);
+    assert_eq!(method.name, METHOD_UPDATE_NAME);
 
     // == Method users (classic ID) ==
 
     info!("Set users for method.");
-    put_method_user_ids(&client).await?;
+    set_method_user_ids(&client).await?;
 
     debug!("Fetch method users (confirm set).");
     let user_id_list = get_method_user_ids(&client).await?;
@@ -174,8 +174,8 @@ async fn hosted_sites_lifecycle() -> Result<()> {
         Vec::from(METHOD_ADD_USER_IDS)  // Pre-sorted for easy comparison.
     );
 
-    info!("Replace users of method.");
-    put_method_user_ids(&client).await?;
+    info!("Replace users for method.");
+    set_method_user_ids(&client).await?;
 
     debug!("Fetch method users (confirm replaced).");
     let user_id_list = get_method_user_ids(&client).await?;
@@ -198,7 +198,7 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     // == Product ==
 
     info!("Post a child product.");
-    post_product(&client).await?;
+    create_product(&client).await?;
 
     debug!("Fetch method's products list (confirm contained).");
     let products_list = get_products(&client).await?;
@@ -210,20 +210,20 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     debug!("Fetch product (confirm created).");
     let product = get_product(&client).await?;
     assert_eq!(product.id, PRODUCT_ID);
-    assert_eq!(product.name, PRODUCT_POST_NAME);
+    assert_eq!(product.name, PRODUCT_CREATE_NAME);
 
     info!("Modify product.");
-    put_product(&client).await?;
+    update_product(&client).await?;
 
     debug!("Fetch product (confirm modified).");
     let product = get_product(&client).await?;
     assert_eq!(product.id, PRODUCT_ID);
-    assert_eq!(product.name, PRODUCT_PUT_NAME);
+    assert_eq!(product.name, PRODUCT_UPDATE_NAME);
 
     // == Product users (classic ID) ==
 
     info!("Set users for product.");
-    put_product_user_ids(&client).await?;
+    set_product_user_ids(&client).await?;
 
     debug!("Fetch product users (confirm set).");
     let user_id_list = get_product_user_ids(&client).await?;
@@ -252,7 +252,7 @@ async fn hosted_sites_lifecycle() -> Result<()> {
     );
 
     info!("Replace users of product.");
-    put_product_user_ids(&client).await?;
+    set_product_user_ids(&client).await?;
 
     debug!("Fetch product users (confirm replaced).");
     let user_id_list = get_product_user_ids(&client).await?;
@@ -416,12 +416,11 @@ async fn get_method(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDe
     Ok(method)
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn post_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn create_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating method '{METHOD_ID}'...");
 
-    let method = MethodDetails::new(METHOD_ID, METHOD_POST_NAME)
+    let method = MethodDetails::new(METHOD_ID, METHOD_CREATE_NAME)
         .with_url(
             &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_POST").wrap_err(
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
@@ -434,7 +433,7 @@ async fn post_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     trace!("Method (Debug): {method:#?}");
     debug!("Method (JSON): {}", serde_json::to_string_pretty(&method)?);
 
-    if let Err(err) = client.post_method(&method).await {
+    if let Err(err) = client.create_method(&method).await {
         error!("Error creating method '{METHOD_ID}': {err:#?}");
         bail!(err);
     }
@@ -444,12 +443,11 @@ async fn post_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     Ok(())
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn update_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) method '{METHOD_ID}'...");
 
-    let method = MethodDetails::new(METHOD_ID, METHOD_PUT_NAME)
+    let method = MethodDetails::new(METHOD_ID, METHOD_UPDATE_NAME)
         .with_url(
             &env::var("HOSTED_LICENSE_PROVIDER_METHOD_URL_PUT").wrap_err(
                 "could not get environment variable `HOSTED_LICENSE_PROVIDER_METHOD_URL_POST`",
@@ -462,7 +460,7 @@ async fn put_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     trace!("Method (Debug): {method:#?}");
     debug!("Method (JSON): {}", serde_json::to_string_pretty(&method)?);
 
-    if let Err(err) = client.put_method(&method).await {
+    if let Err(err) = client.update_method(&method).await {
         error!("Error updating (or creating) method '{METHOD_ID}': {err:#?}");
         bail!(err);
     }
@@ -497,9 +495,8 @@ async fn get_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result
     Ok(users)
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn set_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}...");
@@ -512,7 +509,7 @@ async fn put_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result
         serde_json::to_string_pretty(&users)?
     );
 
-    client.put_method_user_ids(METHOD_ID, &users).await?;
+    client.set_method_user_ids(METHOD_ID, &users).await?;
 
     debug!("Granted access to method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}.");
 
@@ -585,9 +582,8 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     Ok(())
 // }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 // #[instrument]
-// async fn put_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+// async fn set_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -596,7 +592,7 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     .into();
 //     println!("{users:#?}");
 
-//     client.put_method_user_chain_ids(METHOD_ID, &users).await
+//     client.set_method_user_chain_ids(METHOD_ID, &users).await
 // }
 
 // #[instrument]
@@ -654,14 +650,13 @@ async fn get_product(client: &HostedLicenseProviderClient<'_>) -> Result<Product
     Ok(product)
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn post_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn create_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
     let product = ProductDetails::new(
         PRODUCT_ID,
-        PRODUCT_POST_NAME,
+        PRODUCT_CREATE_NAME,
         &env::var("HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST").wrap_err(
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
@@ -676,7 +671,7 @@ async fn post_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
         serde_json::to_string_pretty(&product)?
     );
 
-    if let Err(err) = client.post_product(METHOD_ID, &product).await {
+    if let Err(err) = client.create_product(METHOD_ID, &product).await {
         error!("Error creating product '{PRODUCT_ID}' in method '{METHOD_ID}': {err:#?}");
         bail!(err);
     }
@@ -686,14 +681,13 @@ async fn post_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     Ok(())
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn update_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
     let product = ProductDetails::new(
         PRODUCT_ID,
-        PRODUCT_PUT_NAME,
+        PRODUCT_UPDATE_NAME,
         &env::var("HOSTED_LICENSE_PROVIDER_PRODUCT_URL_PUT").wrap_err(
             "could not get environment variable `HOSTED_LICENSE_PROVIDER_PRODUCT_URL_POST`",
         )?,
@@ -708,7 +702,7 @@ async fn put_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
         serde_json::to_string_pretty(&product)?
     );
 
-    if let Err(err) = client.put_product(METHOD_ID, &product).await {
+    if let Err(err) = client.update_product(METHOD_ID, &product).await {
         error!(
             "Error updating (or creating) product '{PRODUCT_ID}' in method '{METHOD_ID}': {err:#?}"
         );
@@ -743,9 +737,8 @@ async fn get_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Resul
     Ok(users)
 }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 #[instrument]
-async fn put_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+async fn set_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
     debug!("Granting access to product '{PRODUCT_ID}' of method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}...");
@@ -759,7 +752,7 @@ async fn put_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Resul
     );
 
     client
-        .put_product_user_ids(METHOD_ID, PRODUCT_ID, &users)
+        .set_product_user_ids(METHOD_ID, PRODUCT_ID, &users)
         .await?;
 
     debug!("Granted access to product '{PRODUCT_ID}' of method '{METHOD_ID}' exclusively to user IDs {user_ids_fmt}.");
@@ -841,9 +834,8 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //     Ok(())
 // }
 
-// TODO: Replace leaky abstraction names `post_*` and `put_*` by `create` / `update` / `set`
 // #[instrument]
-// async fn put_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
+// async fn set_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
 //         institution_id: 123,
@@ -853,7 +845,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //     println!("{users:#?}");
 
 //     client
-//         .put_product_user_chain_ids(METHOD_ID, PRODUCT_ID, &users)
+//         .set_product_user_chain_ids(METHOD_ID, PRODUCT_ID, &users)
 //         .await
 // }
 
