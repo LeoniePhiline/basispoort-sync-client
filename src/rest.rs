@@ -6,11 +6,11 @@ use reqwest::{Identity, Response, Url};
 use serde::Serialize;
 use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt};
-use tracing::instrument;
-use url::Host;
+use tracing::{info, instrument};
 
 use crate::error::{Error, ErrorResponse};
 
+/// Build [`RestClient`] ergonomically.
 #[derive(Debug)]
 pub struct RestClientBuilder<'i> {
     identity_cert_file: &'i str,
@@ -23,6 +23,11 @@ pub struct RestClientBuilder<'i> {
 impl<'i> RestClientBuilder<'i> {
     #[instrument]
     pub fn new(identity_cert_file: &'i str, environment: Environment) -> Self {
+        info!(
+            "Configured environment: {environment:?}, connecting to '{}'.",
+            environment.base_url()
+        );
+
         Self {
             identity_cert_file,
             environment,
@@ -33,21 +38,27 @@ impl<'i> RestClientBuilder<'i> {
         }
     }
 
+    /// Sets the connect timeout on the HTTP request client.
     pub fn connect_timeout(&mut self, duration: Duration) -> &mut Self {
         self.connect_timeout = duration;
         self
     }
 
+    /// Sets the request-response timeout on the HTTP request client.
     pub fn timeout(&mut self, duration: Duration) -> &mut Self {
         self.timeout = duration;
         self
     }
 
+    /// Sets the minimum TLS version. At the time of writing, Basispoort does not yet support TLS 1.3.
     pub fn min_tls_version(&mut self, version: reqwest::tls::Version) -> &mut Self {
         self.min_tls_version = version;
         self
     }
 
+    /// Build the configured [`RestClient`].
+    ///
+    /// Note that this method is `async` and returns a `Result`, as it reads the client certificate from disk.
     #[instrument]
     pub async fn build(&self) -> crate::Result<RestClient> {
         let mut cert = Vec::new();
@@ -84,6 +95,12 @@ impl<'i> RestClientBuilder<'i> {
     }
 }
 
+/// A Basispoort environment.
+///
+/// Environments can be parsed from string, e.g. from `.env` variables.
+///
+/// Each environment has its own [`Environment::base_url`],
+/// which is used for all [`RestClient`]s [configured][`RestClientBuilder::new`] with this `Environment`.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Environment {
     Test,
@@ -92,6 +109,7 @@ pub enum Environment {
     Production,
 }
 
+/// [`Environment`] parse error.
 #[derive(Error, Debug)]
 pub enum ParseEnvironmentError {
     #[error("'{0}' is not a valid environment string")]
