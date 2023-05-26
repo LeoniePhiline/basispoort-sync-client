@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use tokio::{fs::File, io::AsyncReadExt};
 
 use crate::error::Error;
-use crate::Result;
+use crate::{BasispoortId, Result};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MethodDetailsList {
@@ -58,7 +58,7 @@ pub enum ApplicationTag {
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct UserIdList {
     #[serde(rename = "gebruikers")]
-    pub users: Vec<u64>,
+    pub users: Vec<BasispoortId>,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -70,7 +70,7 @@ pub struct UserChainIdList {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserChainId {
     #[serde(rename = "instellingId")]
-    pub institution_id: u64,
+    pub institution_id: BasispoortId,
     #[serde(rename = "eckId")]
     pub chain_id: String,
 }
@@ -82,7 +82,7 @@ pub struct BulkRequest {
     #[serde(rename = "producten")]
     pub product_ids: Vec<String>,
     #[serde(rename = "gebruikers")]
-    pub user_ids: Vec<u64>,
+    pub user_ids: Vec<BasispoortId>,
     #[serde(rename = "gebruikerEckIds")]
     pub user_chain_ids: Vec<UserChainId>,
 }
@@ -263,13 +263,13 @@ async fn icon_from_file(path: &Path) -> Result<String> {
     Ok(format!("{mime_type_prefix}{}", base64.encode(icon_data)))
 }
 
-impl From<Vec<u64>> for UserIdList {
-    fn from(users: Vec<u64>) -> Self {
+impl From<Vec<BasispoortId>> for UserIdList {
+    fn from(users: Vec<BasispoortId>) -> Self {
         UserIdList { users }
     }
 }
 
-impl From<UserIdList> for Vec<u64> {
+impl From<UserIdList> for Vec<BasispoortId> {
     fn from(list: UserIdList) -> Self {
         list.users
     }

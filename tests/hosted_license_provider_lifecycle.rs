@@ -4,7 +4,6 @@ use color_eyre::{
     eyre::{bail, WrapErr},
     Result,
 };
-use dotenvy::dotenv;
 use itertools::Itertools;
 use tracing::{debug, error, info, instrument, trace};
 
@@ -14,6 +13,7 @@ use basispoort_sync_client::{
         ProductDetailsList, /* UserChainId, UserChainIdList, */ UserIdList,
     },
     rest::RestClient,
+    BasispoortId,
 };
 
 use util::*;
@@ -28,8 +28,8 @@ const METHOD_CREATE_CODE: &str = "method-create";
 const METHOD_UPDATE_NAME: &str = "Test method (PUT)";
 const METHOD_UPDATE_CODE: &str = "method-update";
 
-const METHOD_SET_USER_IDS: [u64; 3] = [123, 456, 789];
-const METHOD_ADD_USER_IDS: [u64; 2] = [123456, 456789];
+const METHOD_SET_USER_IDS: [BasispoortId; 3] = [123, 456, 789];
+const METHOD_ADD_USER_IDS: [BasispoortId; 2] = [123456, 456789];
 
 const PRODUCT_ID: &str = "lifecycle_integration_test_product";
 
@@ -39,11 +39,12 @@ const PRODUCT_CREATE_CODE: &str = "product-create";
 const PRODUCT_UPDATE_NAME: &str = "Test product (PUT)";
 const PRODUCT_UPDATE_CODE: &str = "product-update";
 
-const PRODUCT_SET_USER_IDS: [u64; 3] = [321, 654, 987];
-const PRODUCT_ADD_USER_IDS: [u64; 2] = [654321, 987654];
+const PRODUCT_SET_USER_IDS: [BasispoortId; 3] = [321, 654, 987];
+const PRODUCT_ADD_USER_IDS: [BasispoortId; 2] = [654321, 987654];
 
-const BULK_GRANT_USER_IDS: [u64; 16] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-const BULK_REVOKE_USER_IDS: [u64; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+const BULK_GRANT_USER_IDS: [BasispoortId; 16] =
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+const BULK_REVOKE_USER_IDS: [BasispoortId; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
 
 const APPLICATION_CREATE_ICON_URL: &str =
     "https://www.example.com/path/icon.svg?query=value#anchor";
@@ -121,14 +122,7 @@ const APPLICATION_UPDATE_ICON_URL: &str =
 #[tokio::test]
 async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     // == Setup ==
-    info!("Load environment variables from `.env`.");
-    dotenv().ok();
-
-    info!("Initialize tracing.");
-    tracing_init()?;
-
-    info!("Create an authenticated REST API client for the env-configured Basispoort environment.");
-    let rest_client = make_rest_client().await?;
+    let rest_client = setup().await?;
 
     info!("Create a hosted license provider (\"Hosted Lika\") service REST API client.");
     let client = make_hosted_license_provider_service_client(&rest_client)?;
@@ -218,7 +212,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
 
     debug!("Fetch method users (confirm deleted).");
     let user_id_list = get_method_user_ids(&client).await?;
-    assert_eq!(user_id_list.users, Vec::<u64>::with_capacity(0));
+    assert_eq!(user_id_list.users, Vec::<BasispoortId>::with_capacity(0));
 
     // == Method users (chain ID) ==
 
@@ -241,12 +235,10 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     assert_eq!(product.id, PRODUCT_ID);
     assert_eq!(product.name, PRODUCT_CREATE_NAME);
     assert_eq!(product.code, Some(PRODUCT_CREATE_CODE.to_string()));
-    // Icon URL Is currently broken - Basispoort consortium informed by mail.
-    // TODO: Re-enable once fixed.
-    // assert_eq!(
-    //     product.icon_url,
-    //     Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
-    // );
+    assert_eq!(
+        product.icon_url,
+        Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
+    );
 
     info!("Modify product.");
     update_product(&client).await?;
@@ -256,12 +248,10 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     assert_eq!(product.id, PRODUCT_ID);
     assert_eq!(product.name, PRODUCT_UPDATE_NAME);
     assert_eq!(product.code, Some(PRODUCT_UPDATE_CODE.to_string()));
-    // Icon URL Is currently broken - Basispoort consortium informed by mail.
-    // TODO: Re-enable once fixed.
-    // assert_eq!(
-    //     product.icon_url,
-    //     Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
-    // );
+    assert_eq!(
+        product.icon_url,
+        Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
+    );
 
     // == Product users (classic ID) ==
 
@@ -309,7 +299,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
 
     debug!("Fetch product users (confirm deleted).");
     let user_id_list = get_product_user_ids(&client).await?;
-    assert_eq!(user_id_list.users, Vec::<u64>::with_capacity(0));
+    assert_eq!(user_id_list.users, Vec::<BasispoortId>::with_capacity(0));
 
     // == Product users (chain ID) ==
 

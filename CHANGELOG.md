@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release-date -->
 
+### BREAKING CHANGES
+
+- Represent Basispoort ID by signed(!) `i64` as specified in Open API schema.
+
 ### Added
 
+- Implement all institutions properties service endpoints.
 - Add institutions service integration test.
+- Implement all synchronization permissions endpoints.
+- Add synchronization permissions integration test.
+- Add type alias `BasispoortId` for `i64`.
 
 ### Changed
 

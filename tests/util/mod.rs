@@ -4,16 +4,42 @@ use color_eyre::{
     eyre::{eyre, WrapErr},
     Result,
 };
-use tracing::instrument;
+use dotenvy::dotenv;
+use tokio::sync::OnceCell;
+use tracing::{info, instrument};
 use tracing_error::ErrorLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
 
-use basispoort_sync_client::rest::{RestClient, RestClientBuilder};
+use basispoort_sync_client::{
+    institutions::InstitutionsServiceClient,
+    rest::{RestClient, RestClientBuilder},
+};
 
 // == Setup ==
 
-pub fn tracing_init() -> Result<()> {
+static REST_CLIENT: OnceCell<Result<RestClient>> = OnceCell::const_new();
+
+/// Use `OnceCell` to initialize tracing only once, even if multiple tests
+/// within the same integration test crate are being run in parallel.
+pub async fn setup() -> Result<RestClient> {
+    let rest_client = REST_CLIENT.get_or_init(|| async {
+        dotenv().ok();
+        tracing_init()?;
+
+        info!("Create an authenticated REST API client for the env-configured Basispoort environment.");
+        let rest_client = make_rest_client().await?;
+
+        Ok(rest_client)
+     }).await;
+
+    match rest_client {
+        Ok(rest_client) => Ok(rest_client.clone()),
+        Err(err) => Err(eyre!(err)),
+    }
+}
+
+fn tracing_init() -> Result<()> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
@@ -34,7 +60,7 @@ pub fn tracing_init() -> Result<()> {
 }
 
 #[instrument]
-pub async fn make_rest_client() -> Result<RestClient> {
+async fn make_rest_client() -> Result<RestClient> {
     Ok(RestClientBuilder::new(
         &env::var("IDENTITY_CERT_FILE")
             .wrap_err("could not get environment variable `IDENTITY_CERT_FILE`")?,
@@ -44,4 +70,9 @@ pub async fn make_rest_client() -> Result<RestClient> {
     )
     .build()
     .await?)
+}
+
+#[instrument]
+pub fn make_institutions_service_client(rest_client: &RestClient) -> InstitutionsServiceClient<'_> {
+    InstitutionsServiceClient::new(rest_client)
 }

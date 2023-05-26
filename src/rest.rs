@@ -146,7 +146,7 @@ impl Environment {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RestClient {
     client: reqwest::Client,
     pub base_url: Url,
