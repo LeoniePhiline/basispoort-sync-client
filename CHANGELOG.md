@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - REST client logs and deserializes request and response payloads, response status and response headers, simplifying specialized service clients.
+- Refactor hosted license provider model structs and client into separate submodules.
 
 ## [0.3.1] - 2023-05-25
 
