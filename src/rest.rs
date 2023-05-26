@@ -2,13 +2,17 @@ use std::fmt::Debug;
 use std::str::FromStr;
 use std::time::Duration;
 
+use bytes::Bytes;
 use reqwest::{Identity, Response, Url};
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt};
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument, trace};
 
-use crate::error::{Error, ErrorResponse};
+use crate::{
+    error::{Error, ErrorResponse},
+    Result,
+};
 
 /// Build [`RestClient`] ergonomically.
 #[derive(Debug)]
@@ -60,7 +64,7 @@ impl<'i> RestClientBuilder<'i> {
     ///
     /// Note that this method is `async` and returns a `Result`, as it reads the client certificate from disk.
     #[instrument]
-    pub async fn build(&self) -> crate::Result<RestClient> {
+    pub async fn build(&self) -> Result<RestClient> {
         let mut cert = Vec::new();
         File::open(self.identity_cert_file)
             .await
@@ -120,7 +124,7 @@ impl FromStr for Environment {
     type Err = ParseEnvironmentError;
 
     #[instrument]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         Ok(match s {
             "test" => Self::Test,
             "acceptance" => Self::Acceptance,
@@ -151,7 +155,7 @@ pub struct RestClient {
 impl RestClient {
     // TODO: Unit test
     #[instrument]
-    fn make_url(&self, path: &str) -> crate::Result<Url> {
+    fn make_url(&self, path: &str) -> Result<Url> {
         self.base_url.join(path).map_err(|source| {
             Error::ParseUrl {
                 url: path.to_owned(),
@@ -162,8 +166,11 @@ impl RestClient {
     }
 
     #[instrument]
-    async fn error_status(&self, url: Url, response: Response) -> crate::Result<Response> {
+    async fn error_status(&self, url: Url, response: Response) -> Result<Response> {
         let status = response.status();
+
+        debug!(status = status.to_string(), headers = ?response.headers());
+
         match response.error_for_status_ref() {
             Err(source) => {
                 let response_bytes = response.bytes().await.map_err(Error::ReceiveResponseBody)?;
@@ -184,9 +191,29 @@ impl RestClient {
         }
     }
 
+    #[instrument(skip(self, response))]
+    async fn deserialize<T: DeserializeOwned + Debug>(&self, response: Response) -> Result<T> {
+        let payload_raw = response.bytes().await.map_err(Error::ReceiveResponseBody)?;
+        trace!(?payload_raw);
+
+        // Replace empty responses by valid JSON, deserializable into `T = ()`.
+        let payload_raw = match payload_raw.len() {
+            0 => Bytes::from_static(b"null"),
+            _ => payload_raw,
+        };
+
+        let payload_deserialized =
+            serde_json::from_slice(&payload_raw).map_err(Error::DeserializeResponseBody)?;
+        debug!(?payload_deserialized);
+
+        Ok(payload_deserialized)
+    }
+
     #[instrument]
-    pub async fn get(&self, path: &str) -> crate::Result<Response> {
+    pub async fn get<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         let url = self.make_url(path)?;
+        trace!("GET {}", url.as_str());
+
         let response = self
             .client
             .get(url.clone())
@@ -194,16 +221,19 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        self.error_status(url, response).await
+        let response = self.error_status(url, response).await?;
+        self.deserialize(response).await
     }
 
-    #[instrument]
-    pub async fn post<T: Serialize + Debug + ?Sized>(
+    #[instrument(skip(payload))]
+    pub async fn post<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
-        payload: &T,
-    ) -> crate::Result<Response> {
+        payload: &P,
+    ) -> Result<T> {
         let url = self.make_url(path)?;
+        trace!(?payload, "POST {}", url.as_str());
+
         let response = self
             .client
             .post(url.clone())
@@ -212,16 +242,19 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        self.error_status(url, response).await
+        let response = self.error_status(url, response).await?;
+        self.deserialize(response).await
     }
 
-    #[instrument]
-    pub async fn put<T: Serialize + Debug + ?Sized>(
+    #[instrument(skip(payload))]
+    pub async fn put<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
-        payload: &T,
-    ) -> crate::Result<Response> {
+        payload: &P,
+    ) -> Result<T> {
         let url = self.make_url(path)?;
+        trace!(?payload, "PUT {}", url.as_str());
+
         let response = self
             .client
             .put(url.clone())
@@ -230,12 +263,15 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        self.error_status(url, response).await
+        let response = self.error_status(url, response).await?;
+        self.deserialize(response).await
     }
 
     #[instrument]
-    pub async fn delete(&self, path: &str) -> crate::Result<Response> {
+    pub async fn delete<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         let url = self.make_url(path)?;
+        trace!("DELETE {}", url.as_str());
+
         let response = self
             .client
             .delete(url.clone())
@@ -243,7 +279,8 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        self.error_status(url, response).await
+        let response = self.error_status(url, response).await?;
+        self.deserialize(response).await
     }
 }
 

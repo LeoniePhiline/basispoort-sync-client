@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release-date -->
 
+### Changed
+
+- REST client logs and deserializes request and response payloads, response status and response headers, simplifying specialized service clients.
+
 ## [0.3.1] - 2023-05-25
 
 ### Added

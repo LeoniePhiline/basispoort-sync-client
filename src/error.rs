@@ -60,8 +60,8 @@ pub enum Error {
     },
     #[error("failed receiving the server's response body")]
     ReceiveResponseBody(#[source] reqwest::Error),
-    #[error("failed decoding the server's response")]
-    DecodeResponse(#[source] reqwest::Error),
+    #[error("failed decoding the server's response body")]
+    DeserializeResponseBody(#[source] serde_json::Error),
 }
 
 #[derive(Debug, Deserialize)]
