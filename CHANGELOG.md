@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release-date -->
 
+### Added
+
+- Add institutions service integration test.
+
 ### Changed
 
 - REST client logs and deserializes request and response payloads, response status and response headers, simplifying specialized service clients.

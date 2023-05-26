@@ -1,21 +1,24 @@
 use std::{collections::HashSet, env, path::Path};
 
 use color_eyre::{
-    eyre::{bail, eyre, WrapErr},
+    eyre::{bail, WrapErr},
     Result,
 };
 use dotenvy::dotenv;
 use itertools::Itertools;
 use tracing::{debug, error, info, instrument, trace};
-use tracing_error::ErrorLayer;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::prelude::*;
 
-use basispoort_sync_client::hosted_license_provider::{
-    BulkRequest, HostedLicenseProviderClient, MethodDetails, MethodDetailsList, ProductDetails,
-    ProductDetailsList, /* UserChainId, UserChainIdList, */ UserIdList,
+use basispoort_sync_client::{
+    hosted_license_provider::{
+        BulkRequest, HostedLicenseProviderClient, MethodDetails, MethodDetailsList, ProductDetails,
+        ProductDetailsList, /* UserChainId, UserChainIdList, */ UserIdList,
+    },
+    rest::RestClient,
 };
-use basispoort_sync_client::rest::{RestClient, RestClientBuilder};
+
+use util::*;
+
+mod util;
 
 const METHOD_ID: &str = "lifecycle_integration_test_method";
 
@@ -386,39 +389,6 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
 }
 
 // == Setup ==
-
-fn tracing_init() -> Result<()> {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .pretty()
-                .with_thread_names(true)
-                .with_line_number(true)
-                .with_filter(
-                    // Use `RUST_LOG=target[span{field=value}]=level` for fine-grained verbosity control.
-                    // See https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html
-                    tracing_subscriber::EnvFilter::builder().from_env_lossy(),
-                ),
-        )
-        .with(ErrorLayer::default())
-        .try_init()
-        .map_err(|_| eyre!("Tracing initialization failed"))?;
-
-    Ok(())
-}
-
-#[instrument]
-async fn make_rest_client() -> Result<RestClient> {
-    Ok(RestClientBuilder::new(
-        &env::var("IDENTITY_CERT_FILE")
-            .wrap_err("could not get environment variable `IDENTITY_CERT_FILE`")?,
-        env::var("ENVIRONMENT")
-            .wrap_err("could not get environment variable `ENVIRONMENT`")?
-            .parse()?,
-    )
-    .build()
-    .await?)
-}
 
 #[instrument]
 fn make_hosted_license_provider_service_client(
@@ -946,7 +916,7 @@ async fn bulk_grant_permissions(client: &HostedLicenseProviderClient<'_>) -> Res
         method_ids: vec![METHOD_ID.into()],
         product_ids: vec![PRODUCT_ID.into()],
         user_ids,
-        chain_ids: vec![
+        user_chain_ids: vec![
             // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
             // UserChainId {
             //     institution_id: 123,
@@ -982,7 +952,7 @@ async fn bulk_revoke_permissions(client: &HostedLicenseProviderClient<'_>) -> Re
         method_ids: vec![METHOD_ID.into()],
         product_ids: vec![PRODUCT_ID.into()],
         user_ids,
-        chain_ids: vec![
+        user_chain_ids: vec![
             // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
             // UserChainId {
             //     institution_id: 123,
