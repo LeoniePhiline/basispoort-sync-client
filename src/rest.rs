@@ -138,10 +138,10 @@ impl FromStr for Environment {
 impl Environment {
     pub fn base_url(&self) -> Url {
         match self {
-            Environment::Test => "https://test-rest.basispoort.nl".parse().unwrap(),
-            Environment::Acceptance => "https://acceptatie-rest.basispoort.nl".parse().unwrap(),
-            Environment::Staging => "https://staging-rest.basispoort.nl".parse().unwrap(),
-            Environment::Production => "https://rest.basispoort.nl".parse().unwrap(),
+            Environment::Test => "https://test-rest.basispoort.nl/".parse().unwrap(),
+            Environment::Acceptance => "https://acceptatie-rest.basispoort.nl/".parse().unwrap(),
+            Environment::Staging => "https://staging-rest.basispoort.nl/".parse().unwrap(),
+            Environment::Production => "https://rest.basispoort.nl/".parse().unwrap(),
         }
     }
 }

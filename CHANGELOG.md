@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release-date -->
 
+### Changed
+
+- Add trailing slash to environment base URLs to avoid accidental breakage when base URLs are changed.
+  The trailing slash is not currently necessary, as the base URLs consist of scheme and hostname, without a path.
+  However, if a path is ever added in the future due to refactoring and the like, then the trailing slash is required
+  for the URL parser to not consider the last path segment as file and pop it before joining the target path onto the base URL.
+
 ## [0.5.0] - 2023-05-31
 
 ### BREAKING CHANGES
