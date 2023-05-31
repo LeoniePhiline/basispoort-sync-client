@@ -10,7 +10,7 @@ More information about this crate can be found in the [crate documentation][docs
 ## Installation
 
 ```toml
-basispoort-sync-client = "0.5.0"
+basispoort-sync-client = "0.5.1"
 ```
 
 ## Contributing
