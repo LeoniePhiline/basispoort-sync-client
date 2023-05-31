@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The trailing slash is not currently necessary, as the base URLs consist of scheme and hostname, without a path.
   However, if a path is ever added in the future due to refactoring and the like, then the trailing slash is required
   for the URL parser to not consider the last path segment as file and pop it before joining the target path onto the base URL.
+- Make `rest::RestClient::error_status` take `url` by reference, only to clone it in the case of non-success responses.
 
 ## [0.5.0] - 2023-05-31
 

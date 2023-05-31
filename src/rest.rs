@@ -166,7 +166,7 @@ impl RestClient {
     }
 
     #[instrument]
-    async fn error_status(&self, url: Url, response: Response) -> Result<Response> {
+    async fn error_status(&self, url: &Url, response: Response) -> Result<Response> {
         let status = response.status();
 
         debug!(status = status.to_string(), headers = ?response.headers());
@@ -180,7 +180,7 @@ impl RestClient {
                     Err(_) => ErrorResponse::Plain(String::from_utf8_lossy(&response_bytes).into()),
                 };
                 Err(Error::HttpResponse {
-                    url,
+                    url: url.to_owned(),
                     status,
                     error_response,
                     source,
@@ -221,7 +221,7 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        let response = self.error_status(url, response).await?;
+        let response = self.error_status(&url, response).await?;
         self.deserialize(response).await
     }
 
@@ -242,7 +242,7 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        let response = self.error_status(url, response).await?;
+        let response = self.error_status(&url, response).await?;
         self.deserialize(response).await
     }
 
@@ -263,7 +263,7 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        let response = self.error_status(url, response).await?;
+        let response = self.error_status(&url, response).await?;
         self.deserialize(response).await
     }
 
@@ -279,7 +279,7 @@ impl RestClient {
             .await
             .map_err(Error::HttpRequest)?;
 
-        let response = self.error_status(url, response).await?;
+        let response = self.error_status(&url, response).await?;
         self.deserialize(response).await
     }
 }
