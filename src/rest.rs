@@ -64,7 +64,7 @@ impl<'i> RestClientBuilder<'i> {
     ///
     /// Note that this method is `async` and returns a `Result`, as it reads the client certificate from disk.
     #[instrument]
-    pub async fn build(&self) -> Result<RestClient> {
+    pub async fn build(self) -> Result<RestClient> {
         let mut cert = Vec::new();
         File::open(self.identity_cert_file)
             .await
