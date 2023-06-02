@@ -147,12 +147,10 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     assert_eq!(method.id, METHOD_ID);
     assert_eq!(method.name, METHOD_CREATE_NAME);
     assert_eq!(method.code, Some(METHOD_CREATE_CODE.to_string()));
-    // Icon URL Is currently broken - Basispoort consortium informed by mail.
-    // TODO: Re-enable once fixed.
-    // assert_eq!(
-    //     method.icon_url,
-    //     Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
-    // );
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_CREATE_ICON_URL.parse().unwrap())
+    );
 
     info!("Modify method.");
     update_method(&client).await?;
@@ -162,12 +160,10 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     assert_eq!(method.id, METHOD_ID);
     assert_eq!(method.name, METHOD_UPDATE_NAME);
     assert_eq!(method.code, Some(METHOD_UPDATE_CODE.to_string()));
-    // Icon URL Is currently broken - Basispoort consortium informed by mail.
-    // TODO: Re-enable once fixed.
-    // assert_eq!(
-    //     method.icon_url,
-    //     Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
-    // );
+    assert_eq!(
+        method.icon_url,
+        Some(APPLICATION_UPDATE_ICON_URL.parse().unwrap())
+    );
 
     // == Method users (classic ID) ==
 

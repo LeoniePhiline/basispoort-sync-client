@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] <!-- release-date -->
 
+### Changed
+
+- In hosted_license_provider_lifecycle test, re-enable assertation of retrieved method icon, as the issue was fixed upstream.
+
 ## [0.5.1] - 2023-05-31
 
 ### Changed
