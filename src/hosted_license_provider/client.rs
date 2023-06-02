@@ -26,13 +26,13 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Self {
         HostedLicenseProviderClient {
             rest_client,
-            base_path: "/hosted-lika/management/lika",
+            base_path: "/hosted-lika/management/lika/",
             identity_code: identity_code.into(),
         }
     }
 
     fn make_path(&self, path: &str) -> String {
-        format!("{}/{}{}", self.base_path, self.identity_code, path)
+        format!("{}{}/{}", self.base_path, self.identity_code, path)
     }
 
     #[instrument(skip(self))]
@@ -69,27 +69,27 @@ impl<'a> HostedLicenseProviderClient<'a> {
 
     #[instrument]
     pub async fn get_methods(&self) -> Result<MethodDetailsList> {
-        self.get("/methode").await
+        self.get("methode").await
     }
 
     #[instrument]
     pub async fn get_method<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<MethodDetails> {
-        self.get(&format!("/methode/{}", method_id.as_ref())).await
+        self.get(&format!("methode/{}", method_id.as_ref())).await
     }
 
     #[instrument]
     pub async fn create_method(&self, method: &MethodDetails) -> Result<()> {
-        self.post("/methode", method).await
+        self.post("methode", method).await
     }
 
     #[instrument]
     pub async fn update_method(&self, method: &MethodDetails) -> Result<()> {
-        self.put(&format!("/methode/{}", method.id), method).await
+        self.put(&format!("methode/{}", method.id), method).await
     }
 
     #[instrument]
     pub async fn delete_method<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<()> {
-        self.delete(&format!("/methode/{}", method_id.as_ref()))
+        self.delete(&format!("methode/{}", method_id.as_ref()))
             .await
     }
 
@@ -98,7 +98,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         &self,
         method_id: S,
     ) -> Result<UserIdList> {
-        self.get(&format!("/methode/{}/gebruiker", method_id.as_ref()))
+        self.get(&format!("methode/{}/gebruiker", method_id.as_ref()))
             .await
     }
 
@@ -108,13 +108,13 @@ impl<'a> HostedLicenseProviderClient<'a> {
         method_id: S,
         users: &UserIdList,
     ) -> Result<()> {
-        self.put(&format!("/methode/{}/gebruiker", method_id.as_ref()), users)
+        self.put(&format!("methode/{}/gebruiker", method_id.as_ref()), users)
             .await
     }
 
     #[instrument]
     pub async fn delete_method_user_ids<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<()> {
-        self.delete(&format!("/methode/{}/gebruiker", method_id.as_ref()))
+        self.delete(&format!("methode/{}/gebruiker", method_id.as_ref()))
             .await
     }
 
@@ -125,7 +125,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         users: &UserIdList,
     ) -> Result<()> {
         self.post(
-            &format!("/methode/{}/gebruiker/addlist", method_id.as_ref()),
+            &format!("methode/{}/gebruiker/addlist", method_id.as_ref()),
             users,
         )
         .await
@@ -138,7 +138,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         users: &UserIdList,
     ) -> Result<()> {
         self.post(
-            &format!("/methode/{}/gebruiker/removelist", method_id.as_ref()),
+            &format!("methode/{}/gebruiker/removelist", method_id.as_ref()),
             users,
         )
         .await
@@ -149,7 +149,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         &self,
         method_id: S,
     ) -> Result<UserChainIdList> {
-        self.get(&format!("/methode/{}/gebruiker_eckid", method_id.as_ref()))
+        self.get(&format!("methode/{}/gebruiker_eckid", method_id.as_ref()))
             .await
     }
 
@@ -160,7 +160,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         users: &UserChainIdList,
     ) -> Result<()> {
         self.put(
-            &format!("/methode/{}/gebruiker_eckid", method_id.as_ref()),
+            &format!("methode/{}/gebruiker_eckid", method_id.as_ref()),
             users,
         )
         .await
@@ -171,7 +171,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         &self,
         method_id: S,
     ) -> Result<()> {
-        self.delete(&format!("/methode/{}/gebruiker_eckid", method_id.as_ref()))
+        self.delete(&format!("methode/{}/gebruiker_eckid", method_id.as_ref()))
             .await
     }
 
@@ -182,7 +182,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         users: &UserChainIdList,
     ) -> Result<()> {
         self.post(
-            &format!("/methode/{}/gebruiker_eckid/addlist", method_id.as_ref()),
+            &format!("methode/{}/gebruiker_eckid/addlist", method_id.as_ref()),
             users,
         )
         .await
@@ -195,7 +195,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         users: &UserChainIdList,
     ) -> Result<()> {
         self.post(
-            &format!("/methode/{}/gebruiker_eckid/removelist", method_id.as_ref()),
+            &format!("methode/{}/gebruiker_eckid/removelist", method_id.as_ref()),
             users,
         )
         .await
@@ -210,7 +210,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         &self,
         method_id: S,
     ) -> Result<ProductDetailsList> {
-        self.get(&format!("/methode/{}/product", method_id.as_ref()))
+        self.get(&format!("methode/{}/product", method_id.as_ref()))
             .await
     }
 
@@ -221,7 +221,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<ProductDetails> {
         self.get(&format!(
-            "/methode/{}/product/{}",
+            "methode/{}/product/{}",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -234,7 +234,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         method_id: S,
         product: &ProductDetails,
     ) -> Result<()> {
-        self.post(&format!("/methode/{}/product", method_id.as_ref()), product)
+        self.post(&format!("methode/{}/product", method_id.as_ref()), product)
             .await
     }
 
@@ -245,7 +245,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product: &ProductDetails,
     ) -> Result<()> {
         self.put(
-            &format!("/methode/{}/product/{}", method_id.as_ref(), product.id),
+            &format!("methode/{}/product/{}", method_id.as_ref(), product.id),
             product,
         )
         .await
@@ -258,7 +258,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<()> {
         self.delete(&format!(
-            "/methode/{}/product/{}",
+            "methode/{}/product/{}",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -272,7 +272,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<UserIdList> {
         self.get(&format!(
-            "/methode/{}/product/{}/gebruiker",
+            "methode/{}/product/{}/gebruiker",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -288,7 +288,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.put(
             &format!(
-                "/methode/{}/product/{}/gebruiker",
+                "methode/{}/product/{}/gebruiker",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -304,7 +304,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<()> {
         self.delete(&format!(
-            "/methode/{}/product/{}/gebruiker",
+            "methode/{}/product/{}/gebruiker",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -320,7 +320,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.post(
             &format!(
-                "/methode/{}/product/{}/gebruiker/addlist",
+                "methode/{}/product/{}/gebruiker/addlist",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -338,7 +338,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.post(
             &format!(
-                "/methode/{}/product/{}/gebruiker/removelist",
+                "methode/{}/product/{}/gebruiker/removelist",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -354,7 +354,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<UserChainIdList> {
         self.get(&format!(
-            "/methode/{}/product/{}/gebruiker_eckid",
+            "methode/{}/product/{}/gebruiker_eckid",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -370,7 +370,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.put(
             &format!(
-                "/methode/{}/product/{}/gebruiker_eckid",
+                "methode/{}/product/{}/gebruiker_eckid",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -386,7 +386,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         product_id: S,
     ) -> Result<()> {
         self.delete(&format!(
-            "/methode/{}/product/{}/gebruiker_eckid",
+            "methode/{}/product/{}/gebruiker_eckid",
             method_id.as_ref(),
             product_id.as_ref()
         ))
@@ -402,7 +402,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.post(
             &format!(
-                "/methode/{}/product/{}/gebruiker_eckid/addlist",
+                "methode/{}/product/{}/gebruiker_eckid/addlist",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -420,7 +420,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
     ) -> Result<()> {
         self.post(
             &format!(
-                "/methode/{}/product/{}/gebruiker_eckid/removelist",
+                "methode/{}/product/{}/gebruiker_eckid/removelist",
                 method_id.as_ref(),
                 product_id.as_ref()
             ),
@@ -435,11 +435,11 @@ impl<'a> HostedLicenseProviderClient<'a> {
 
     #[instrument]
     pub async fn bulk_grant_permissions(&self, bulk_request: &BulkRequest) -> Result<()> {
-        self.post("/permissions/grant", bulk_request).await
+        self.post("permissions/grant", bulk_request).await
     }
 
     #[instrument]
     pub async fn bulk_revoke_permissions(&self, bulk_request: &BulkRequest) -> Result<()> {
-        self.post("/permissions/revoke", bulk_request).await
+        self.post("permissions/revoke", bulk_request).await
     }
 }

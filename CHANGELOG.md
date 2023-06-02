@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - In hosted_license_provider_lifecycle test, re-enable assertation of retrieved method icon, as the issue was fixed upstream.
+- In API clients, unify path handling: base paths with trailing slash for directories, endpoint path without leading slash for relative paths.
 
 ## [0.5.1] - 2023-05-31
 

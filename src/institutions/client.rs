@@ -21,7 +21,7 @@ impl<'a> InstitutionsServiceClient<'a> {
             rest_client,
             // TODO: Exception "/v2/nawsearch" - separate client.
             // TODO: "/v2/licenties" as separate service (and crate feature)
-            base_path: "/rest/v2/instellingen",
+            base_path: "rest/v2/instellingen/",
         }
     }
 
@@ -54,7 +54,7 @@ impl<'a> InstitutionsServiceClient<'a> {
 
     #[instrument]
     pub async fn get_institution_ids(&self) -> Result<Vec<BasispoortId>> {
-        self.get("/").await
+        self.get("").await
     }
 
     #[instrument]
@@ -62,7 +62,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionOverview> {
-        self.get(&format!("/{institution_id}")).await
+        self.get(&format!("{institution_id}")).await
     }
 
     #[instrument]
@@ -70,7 +70,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionDetails> {
-        self.get(&format!("/{institution_id}/details")).await
+        self.get(&format!("{institution_id}/details")).await
     }
 
     #[instrument]
@@ -78,7 +78,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionGroups> {
-        self.get(&format!("/{institution_id}/groepen")).await
+        self.get(&format!("{institution_id}/groepen")).await
     }
 
     #[instrument]
@@ -86,7 +86,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionStudents> {
-        self.get(&format!("/{institution_id}/leerlingen")).await
+        self.get(&format!("{institution_id}/leerlingen")).await
     }
 
     #[instrument]
@@ -95,7 +95,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         institution_id: BasispoortId,
         student_ids: &[BasispoortId],
     ) -> Result<InstitutionStudents> {
-        self.post(&format!("/{institution_id}/leerlingen"), student_ids)
+        self.post(&format!("{institution_id}/leerlingen"), student_ids)
             .await
     }
 
@@ -106,7 +106,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         student_chain_ids: &[String], // TODO: type def?
     ) -> Result<InstitutionStudents> {
         self.post(
-            &format!("/{institution_id}/leerlingen_eckid"),
+            &format!("{institution_id}/leerlingen_eckid"),
             student_chain_ids,
         )
         .await
@@ -117,7 +117,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionStaff> {
-        self.get(&format!("/{institution_id}/staf")).await
+        self.get(&format!("{institution_id}/staf")).await
     }
 
     #[instrument]
@@ -125,7 +125,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<String> {
-        self.get(&format!("/{institution_id}/ref")).await
+        self.get(&format!("{institution_id}/ref")).await
     }
 
     // TODO: Test requesting sync permission manually with a school with ICT coordinator account.
@@ -136,7 +136,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         request_permission: bool,
     ) -> Result<SynchronizationPermission> {
         self.get(&format!(
-            "/{institution_id}/uitgever/synchronizationpermission?request-permission={request_permission}"
+            "{institution_id}/uitgever/synchronizationpermission?request-permission={request_permission}"
         ))
         .await
     }
@@ -148,7 +148,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         institution_id: BasispoortId,
     ) -> Result<()> {
         self.delete(&format!(
-            "/{institution_id}/uitgever/synchronizationpermission"
+            "{institution_id}/uitgever/synchronizationpermission"
         ))
         .await
     }
@@ -158,7 +158,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         date: &NaiveDate,
     ) -> Result<Vec<BasispoortId>> {
-        self.get(&format!("/synchronizationpermission/toegekend/{date}"))
+        self.get(&format!("synchronizationpermission/toegekend/{date}"))
             .await
     }
 
@@ -167,7 +167,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         date: &NaiveDate,
     ) -> Result<Vec<BasispoortId>> {
-        self.get(&format!("/synchronizationpermission/ingetrokken/{date}"))
+        self.get(&format!("synchronizationpermission/ingetrokken/{date}"))
             .await
     }
 
