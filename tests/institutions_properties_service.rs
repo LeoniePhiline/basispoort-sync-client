@@ -1,7 +1,10 @@
 use color_eyre::Result;
 use tracing::{debug, info, instrument, trace};
 
-use basispoort_sync_client::{institutions::InstitutionsServiceClient, BasispoortId};
+use basispoort_sync_client::{
+    institutions::{InstitutionDetails, InstitutionsSearchPredicate, InstitutionsServiceClient},
+    BasispoortId,
+};
 
 use util::*;
 
@@ -19,7 +22,7 @@ async fn institution_properties_service() -> Result<()> {
     let institution_ids = get_institution_ids(&client).await?;
 
     info!("Fetch all institution details.");
-    get_institutions_details(&client, &institution_ids).await?;
+    let institutions_details = get_institutions_details(&client, &institution_ids).await?;
 
     info!("Fetch all institutions overviews.");
     get_institutions_overviews(&client, &institution_ids).await?;
@@ -39,6 +42,10 @@ async fn institution_properties_service() -> Result<()> {
     info!("Fetch all institutions synchronization permissions.");
     get_institutions_synchronization_permissions(&client, &institution_ids).await?;
 
+    info!("Searching for institutions by known details.");
+
+    search_institutions_by_brin_code(&client, &institutions_details).await?;
+
     Ok(())
 }
 
@@ -57,18 +64,22 @@ async fn get_institution_ids(client: &InstitutionsServiceClient<'_>) -> Result<V
 async fn get_institutions_details(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
-) -> Result<()> {
+) -> Result<Vec<(BasispoortId, InstitutionDetails)>> {
     debug!("Getting all institutions details...");
+
+    let mut institutions_details = Vec::with_capacity(institution_ids.len());
 
     for institution_id in institution_ids {
         debug!("Getting institution {institution_id} details...");
         let institution_details = client.get_institution_details(*institution_id).await?;
         trace!("Institution details: {:#?}", institution_details);
+
+        institutions_details.push((*institution_id, institution_details));
     }
 
     debug!("Got all institutions details.");
 
-    Ok(())
+    Ok(institutions_details)
 }
 
 #[instrument]
@@ -216,3 +227,46 @@ async fn get_institutions_synchronization_permissions(
 
     Ok(())
 }
+
+#[instrument]
+async fn search_institutions_by_brin_code(
+    client: &InstitutionsServiceClient<'_>,
+    institutions_details: &Vec<(BasispoortId, InstitutionDetails)>,
+) -> Result<()> {
+    debug!("Searching for institutions per BRIN code without branch code...");
+
+    for (institution_id, institution_details) in institutions_details {
+        if let Some(brin_code) = &institution_details.brin_code {
+            if !brin_code.is_empty() {
+                debug!("Searching for institution per BRIN code: {}...", brin_code);
+                let search_results = client
+                    .find_institutions(InstitutionsSearchPredicate::new().with_brin_code(brin_code))
+                    .await?;
+                trace!(
+                    "Search results for BRIN code '{}': {:#?}",
+                    brin_code,
+                    search_results
+                );
+
+                // Assert the known institution is found in the search results.
+                // TODO: All input schools are always active - think of a way to test the activeOnly search predicate flag.
+                assert!(search_results
+                    .into_iter()
+                    .any(|search_result| &search_result.id == institution_id));
+            } else {
+                debug!(
+                    "Institution [{institution_id}] '{}' has an empty BRIN code.",
+                    institution_details.name.as_deref().unwrap_or_default()
+                );
+            }
+        } else {
+            debug!(
+                "Institution [{institution_id}] '{}' has no BRIN code.",
+                institution_details.name.as_deref().unwrap_or_default()
+            );
+        }
+    }
+
+    Ok(())
+}
+
