@@ -4,7 +4,7 @@ use chrono::NaiveDate;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::instrument;
 
-use crate::{rest, BasispoortId, Result};
+use crate::{error::Error, rest, BasispoortId, Result};
 
 use super::model::*;
 
@@ -19,9 +19,8 @@ impl<'a> InstitutionsServiceClient<'a> {
     pub fn new(rest_client: &'a rest::RestClient) -> Self {
         InstitutionsServiceClient {
             rest_client,
-            // TODO: Exception "/v2/nawsearch" - separate client.
-            // TODO: "/v2/licenties" as separate service (and crate feature)
-            base_path: "rest/v2/instellingen/",
+            // TODO: "/v2/licenties" as separate service (and crate feature)?
+            base_path: "rest/v2/",
         }
     }
 
@@ -54,7 +53,7 @@ impl<'a> InstitutionsServiceClient<'a> {
 
     #[instrument]
     pub async fn get_institution_ids(&self) -> Result<Vec<BasispoortId>> {
-        self.get("").await
+        self.get("instellingen").await
     }
 
     #[instrument]
@@ -62,7 +61,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionOverview> {
-        self.get(&format!("{institution_id}")).await
+        self.get(&format!("instellingen/{institution_id}")).await
     }
 
     #[instrument]
@@ -70,7 +69,8 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionDetails> {
-        self.get(&format!("{institution_id}/details")).await
+        self.get(&format!("instellingen/{institution_id}/details"))
+            .await
     }
 
     #[instrument]
@@ -78,7 +78,8 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionGroups> {
-        self.get(&format!("{institution_id}/groepen")).await
+        self.get(&format!("instellingen/{institution_id}/groepen"))
+            .await
     }
 
     #[instrument]
@@ -86,7 +87,8 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionStudents> {
-        self.get(&format!("{institution_id}/leerlingen")).await
+        self.get(&format!("instellingen/{institution_id}/leerlingen"))
+            .await
     }
 
     #[instrument]
@@ -95,8 +97,11 @@ impl<'a> InstitutionsServiceClient<'a> {
         institution_id: BasispoortId,
         student_ids: &[BasispoortId],
     ) -> Result<InstitutionStudents> {
-        self.post(&format!("{institution_id}/leerlingen"), student_ids)
-            .await
+        self.post(
+            &format!("instellingen/{institution_id}/leerlingen"),
+            student_ids,
+        )
+        .await
     }
 
     #[instrument]
@@ -106,7 +111,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         student_chain_ids: &[String], // TODO: type def?
     ) -> Result<InstitutionStudents> {
         self.post(
-            &format!("{institution_id}/leerlingen_eckid"),
+            &format!("instellingen/{institution_id}/leerlingen_eckid"),
             student_chain_ids,
         )
         .await
@@ -117,7 +122,8 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<InstitutionStaff> {
-        self.get(&format!("{institution_id}/staf")).await
+        self.get(&format!("instellingen/{institution_id}/staf"))
+            .await
     }
 
     #[instrument]
@@ -125,7 +131,8 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         institution_id: BasispoortId,
     ) -> Result<String> {
-        self.get(&format!("{institution_id}/ref")).await
+        self.get(&format!("instellingen/{institution_id}/ref"))
+            .await
     }
 
     // TODO: Test requesting sync permission manually with a school with ICT coordinator account.
@@ -136,7 +143,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         request_permission: bool,
     ) -> Result<SynchronizationPermission> {
         self.get(&format!(
-            "{institution_id}/uitgever/synchronizationpermission?request-permission={request_permission}"
+            "instellingen/{institution_id}/uitgever/synchronizationpermission?request-permission={request_permission}"
         ))
         .await
     }
@@ -148,7 +155,7 @@ impl<'a> InstitutionsServiceClient<'a> {
         institution_id: BasispoortId,
     ) -> Result<()> {
         self.delete(&format!(
-            "{institution_id}/uitgever/synchronizationpermission"
+            "instellingen/{institution_id}/uitgever/synchronizationpermission"
         ))
         .await
     }
@@ -158,8 +165,10 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         date: &NaiveDate,
     ) -> Result<Vec<BasispoortId>> {
-        self.get(&format!("synchronizationpermission/toegekend/{date}"))
-            .await
+        self.get(&format!(
+            "instellingen/synchronizationpermission/toegekend/{date}"
+        ))
+        .await
     }
 
     #[instrument]
@@ -167,9 +176,21 @@ impl<'a> InstitutionsServiceClient<'a> {
         &self,
         date: &NaiveDate,
     ) -> Result<Vec<BasispoortId>> {
-        self.get(&format!("synchronizationpermission/ingetrokken/{date}"))
-            .await
+        self.get(&format!(
+            "instellingen/synchronizationpermission/ingetrokken/{date}"
+        ))
+        .await
     }
 
-    // TODO: Add NAW search client. (crate feature)
+    #[instrument]
+    pub async fn find_institutions(
+        &self,
+        predicate: InstitutionsSearchPredicate<'_>,
+    ) -> Result<Vec<InstitutionSearchResult>> {
+        self.get(&format!(
+            "nawsearch?{query}",
+            query = String::try_from(&predicate).map_err(Error::SerializeSearchPredicate)?
+        ))
+        .await
+    }
 }

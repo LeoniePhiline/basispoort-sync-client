@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use chrono::NaiveDate;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::BasispoortId;
 
@@ -214,4 +214,148 @@ pub struct ResultMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct SynchronizationPermission {
     pub has_synchronization_permission: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct InstitutionSearchResult {
+    pub id: BasispoortId,
+
+    #[serde(rename = "naam")]
+    pub name: String,
+
+    // Note: In opposition to `InstitutionDetails`, this `brin_code` field
+    //       includes the "dependancecode" / `branch_code`!
+    #[serde(rename = "brincode")]
+    pub brin_code: Option<String>,
+
+    #[serde(rename = "straat")]
+    pub street: Option<String>,
+
+    #[serde(rename = "huisnummer")]
+    pub house_number: Option<String>,
+
+    #[serde(rename = "huisnummerToevoeging")]
+    pub house_number_postfix: Option<String>,
+
+    #[serde(rename = "postcode")]
+    pub postal_code: Option<String>,
+
+    #[serde(rename = "woonplaats")]
+    pub city: Option<String>,
+
+    #[serde(rename = "telefoonNet")]
+    pub phone_network_code: Option<String>,
+
+    #[serde(rename = "telefoonAbon")]
+    pub phone_subscriber_number: Option<String>,
+
+    #[serde(rename = "emailadres")]
+    pub email_address: Option<String>,
+
+    #[serde(rename = "actief")]
+    pub active: bool,
+
+    #[serde(rename = "bestuurscode")]
+    pub governance_code: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct InstitutionsSearchPredicate<'a> {
+    #[serde(rename = "naam")]
+    pub name: Option<&'a str>,
+
+    #[serde(rename = "brincode")]
+    pub brin_code: Option<&'a str>,
+
+    #[serde(rename = "adres")]
+    pub address: Option<&'a str>,
+
+    #[serde(rename = "postcode")]
+    pub postal_code: Option<&'a str>,
+
+    #[serde(rename = "plaatsnaam")]
+    pub city: Option<&'a str>,
+
+    #[serde(rename = "activeOnly")]
+    pub active_only: bool,
+
+    #[serde(rename = "bestuurscode")]
+    pub governance_code: Option<&'a str>,
+}
+
+impl Default for InstitutionsSearchPredicate<'_> {
+    fn default() -> Self {
+        Self {
+            name: None,
+            brin_code: None,
+            address: None,
+            postal_code: None,
+            city: None,
+            active_only: true,
+            governance_code: None,
+        }
+    }
+}
+
+impl TryFrom<&InstitutionsSearchPredicate<'_>> for String {
+    type Error = serde_urlencoded::ser::Error;
+
+    fn try_from(value: &InstitutionsSearchPredicate) -> Result<Self, Self::Error> {
+        serde_urlencoded::to_string(value)
+    }
+}
+
+impl<'a> InstitutionsSearchPredicate<'a> {
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    pub fn with_name(self, name: &'a str) -> Self {
+        Self {
+            name: Some(name),
+            ..self
+        }
+    }
+
+    pub fn with_brin_code(self, brin_code: &'a str) -> Self {
+        Self {
+            brin_code: Some(brin_code),
+            ..self
+        }
+    }
+
+    pub fn with_address(self, address: &'a str) -> Self {
+        Self {
+            address: Some(address),
+            ..self
+        }
+    }
+
+    pub fn with_postal_code(self, postal_code: &'a str) -> Self {
+        Self {
+            postal_code: Some(postal_code),
+            ..self
+        }
+    }
+
+    pub fn with_city(self, city: &'a str) -> Self {
+        Self {
+            city: Some(city),
+            ..self
+        }
+    }
+
+    pub fn include_inactive(self, name: &'a str) -> Self {
+        Self {
+            name: Some(name),
+            ..self
+        }
+    }
+
+    pub fn with_governance_code(self, governance_code: &'a str) -> Self {
+        Self {
+            governance_code: Some(governance_code),
+            ..self
+        }
+    }
 }
