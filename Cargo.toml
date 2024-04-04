@@ -15,7 +15,7 @@ hosted-license-provider = []
 [dependencies]
 base64 = "0.21.7"
 bytes = "1.6.0"
-chrono = { version = "0.4.24", default-features = false, features = ["clock", "serde"], optional = true }
+chrono = { version = "0.4.37", default-features = false, features = ["clock", "serde"], optional = true }
 reqwest = { version = "0.11.27", default-features = false, features = ["rustls-tls", "json"] }
 serde = { version = "1.0.197", features = ["derive", "alloc"] }
 serde_json = "1.0.115"
