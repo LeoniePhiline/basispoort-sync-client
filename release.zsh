@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-cargo release -vv "$@"
+cargo release -v "$@"
