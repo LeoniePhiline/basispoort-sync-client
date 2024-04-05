@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Implement "find institutions" functionality on the institutions service client.
+- Compile in CI (GitHub Actions).
+- Configure Renovate to keep dependencies up to date.
 
 ### Changed
 
@@ -19,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - In API clients, unify path handling:
   - Base paths with trailing slash for directories, endpoint path without leading slash for relative paths.
   - Path parameters as placeholders for easily readable paths.
+
+### Fixed
+
+- Update dependencies.
 
 ## [0.5.1] - 2023-05-31
 
