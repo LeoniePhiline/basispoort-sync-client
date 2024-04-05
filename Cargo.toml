@@ -7,7 +7,7 @@ edition = "2021"
 license = "MPL-2.0"
 documentation = "https://docs.rs/basispoort-sync-client"
 repository = "https://github.com/LeoniePhiline/basispoort-sync-client"
-version = "0.6.0"
+version = "0.6.1"
 
 [features]
 default = ["institutions", "hosted-license-provider"]
