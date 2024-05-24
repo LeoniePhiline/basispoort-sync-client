@@ -28,8 +28,11 @@ const METHOD_CREATE_CODE: &str = "method-create";
 const METHOD_UPDATE_NAME: &str = "Test method (PUT)";
 const METHOD_UPDATE_CODE: &str = "method-update";
 
-const METHOD_SET_USER_IDS: [BasispoortId; 3] = [123, 456, 789];
-const METHOD_ADD_USER_IDS: [BasispoortId; 2] = [123456, 456789];
+// The three-digit user IDs do not exist.
+const METHOD_SET_USER_IDS: [BasispoortId; 4] = [123, 128684, 128683, 456];
+const METHOD_SET_USER_IDS_EXPECTED: [BasispoortId; 2] = [128683, 128684];
+const METHOD_ADD_USER_IDS: [BasispoortId; 4] = [123, 128691, 128690, 456];
+const METHOD_ADD_USER_IDS_EXPECTED: [BasispoortId; 2] = [128690, 128691];
 
 const PRODUCT_ID: &str = "lifecycle_integration_test_product";
 
@@ -39,12 +42,15 @@ const PRODUCT_CREATE_CODE: &str = "product-create";
 const PRODUCT_UPDATE_NAME: &str = "Test product (PUT)";
 const PRODUCT_UPDATE_CODE: &str = "product-update";
 
-const PRODUCT_SET_USER_IDS: [BasispoortId; 3] = [321, 654, 987];
-const PRODUCT_ADD_USER_IDS: [BasispoortId; 2] = [654321, 987654];
+// TODO
+const PRODUCT_SET_USER_IDS: [BasispoortId; 3] = [127660, 127665, 127666];
+const PRODUCT_ADD_USER_IDS: [BasispoortId; 2] = [157478, 157480];
 
-const BULK_GRANT_USER_IDS: [BasispoortId; 16] =
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
-const BULK_REVOKE_USER_IDS: [BasispoortId; 11] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+const BULK_GRANT_USER_IDS: [BasispoortId; 11] =
+    [1, 2, 127664, 3, 4, 127663, 127667, 5, 6, 128690, 128683];
+const BULK_GRANT_USER_IDS_EXPECTED: [BasispoortId; 5] = [127663, 127664, 127667, 128683, 128690];
+const BULK_REVOKE_USER_IDS: [BasispoortId; 10] =
+    [1, 2, 127663, 127667, 5, 6, 128690, 128689, 128692, 128693];
 
 const APPLICATION_CREATE_ICON_URL: &str =
     "https://www.example.com/path/icon.svg?query=value#anchor";
@@ -171,15 +177,15 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     set_method_user_ids(&client).await?;
 
     debug!("Fetch method users (confirm set).");
-    let user_id_list = get_method_user_ids(&client).await?;
-    assert_eq!(user_id_list.users, Vec::from(METHOD_SET_USER_IDS));
+    let user_id_list = get_method_user_ids(&client).await?; // The listed three-digit IDs do not exist. IDs are not sorted.
+    assert_eq!(user_id_list.users, Vec::from(METHOD_SET_USER_IDS_EXPECTED)); // Expect valid IDs, sorted ascending.
 
     info!("Add users to method.");
     add_method_user_ids(&client).await?;
 
     debug!("Fetch method users (confirm added).");
-    let user_id_list = get_method_user_ids(&client).await?;
-    assert!(METHOD_ADD_USER_IDS
+    let user_id_list = get_method_user_ids(&client).await?; // The listed three-digit IDs do not (no longer?) exist. (User 789, however, exists!)
+    assert!(METHOD_ADD_USER_IDS_EXPECTED
         .iter()
         .all(|user_id| user_id_list.users.iter().any(|id| id == user_id)));
 
@@ -190,7 +196,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let user_id_list = get_method_user_ids(&client).await?;
     assert_eq!(
         user_id_list.users, // Returned by the server sorted in ascending order.
-        Vec::from(METHOD_ADD_USER_IDS)  // Pre-sorted for easy comparison.
+        Vec::from(METHOD_ADD_USER_IDS_EXPECTED)  // Pre-sorted for easy comparison.
     );
 
     info!("Replace users for method.");
@@ -200,7 +206,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let user_id_list = get_method_user_ids(&client).await?;
     assert_eq!(
         user_id_list.users, // Returned by the server sorted in ascending order.
-        Vec::from(METHOD_SET_USER_IDS)  // Pre-sorted for easy comparison.
+        Vec::from(METHOD_SET_USER_IDS_EXPECTED)  // Pre-sorted for easy comparison.
     );
 
     info!("Delete all users from method.");
@@ -310,14 +316,14 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     let user_id_list = get_method_user_ids(&client).await?;
     assert_eq!(
         user_id_list.users, // Returned by the server sorted in ascending order.
-        Vec::from(BULK_GRANT_USER_IDS)  // Pre-sorted for easy comparison.
+        Vec::from(BULK_GRANT_USER_IDS_EXPECTED)  // Pre-sorted for easy comparison.
     );
 
     debug!("Fetch product users (confirm added).");
     let user_id_list = get_product_user_ids(&client).await?;
     assert_eq!(
         user_id_list.users, // Returned by the server sorted in ascending order.
-        Vec::from(BULK_GRANT_USER_IDS)  // Pre-sorted for easy comparison.
+        Vec::from(BULK_GRANT_USER_IDS_EXPECTED)  // Pre-sorted for easy comparison.
     );
 
     info!("Bulk-remove users from method and product.");
@@ -326,7 +332,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     debug!("Fetch method users (confirm removed).");
     let user_id_list = get_method_user_ids(&client).await?;
     // Added users minus removed users. Some users in the remove list were never added.
-    let mut expected_user_id_list = HashSet::from(BULK_GRANT_USER_IDS)
+    let mut expected_user_id_list = HashSet::from(BULK_GRANT_USER_IDS_EXPECTED)
         .difference(&HashSet::from(BULK_REVOKE_USER_IDS))
         .copied()
         .collect::<Vec<_>>();
@@ -339,7 +345,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     debug!("Fetch product users (confirm removed).");
     let user_id_list = get_product_user_ids(&client).await?;
     // Added users minus removed users. Some users in the remove list were never added.
-    let mut expected_user_id_list = HashSet::from(BULK_GRANT_USER_IDS)
+    let mut expected_user_id_list = HashSet::from(BULK_GRANT_USER_IDS_EXPECTED)
         .difference(&HashSet::from(BULK_REVOKE_USER_IDS))
         .copied()
         .collect::<Vec<_>>();
