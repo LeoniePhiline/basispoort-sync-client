@@ -69,7 +69,7 @@ pub enum Error {
     HttpRequest(#[source] reqwest::Error),
 
     /// HTTP response error.
-    #[error("HTTP response error")]
+    #[error("HTTP {status} error response for '{url}'")]
     HttpResponse {
         url: Url,
         status: reqwest::StatusCode,

@@ -7,7 +7,7 @@ use reqwest::{Identity, Response, Url};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt};
-use tracing::{debug, info, instrument, trace};
+use tracing::{debug, error, info, instrument, trace};
 
 use crate::{
     error::{Error, ErrorResponse},
@@ -179,6 +179,9 @@ impl RestClient {
                     Ok(error_response) => ErrorResponse::JSON(error_response),
                     Err(_) => ErrorResponse::Plain(String::from_utf8_lossy(&response_bytes).into()),
                 };
+
+                error!("HTTP {status} error response for URL '{url}': {error_response:#?}");
+
                 Err(Error::HttpResponse {
                     url: url.to_owned(),
                     status,
