@@ -24,6 +24,8 @@ static REST_CLIENT: OnceCell<Result<RestClient>> = OnceCell::const_new();
 /// within the same integration test crate are being run in parallel.
 pub async fn setup() -> Result<RestClient> {
     let rest_client = REST_CLIENT.get_or_init(|| async {
+        color_eyre::install()?;
+
         dotenv().ok();
         tracing_init()?;
 
