@@ -135,7 +135,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
     info!("Create a hosted license provider (\"Hosted Lika\") service REST API client.");
     let client = make_hosted_license_provider_service_client(&rest_client)?;
 
-    info!("Clean up possible left-overs from a previous failed test.");
+    info!("Clean up possible left-overs from a previous failed test. This will print a warning if there are no left-overs to clean up.");
     delete_method(&client).await.ok();
 
     // == Method ==

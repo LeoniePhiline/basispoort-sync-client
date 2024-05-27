@@ -9,7 +9,7 @@ use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt};
 #[cfg(not(coverage))]
 use tracing::instrument;
-use tracing::{debug, error, info, trace};
+use tracing::{debug, info, trace, warn};
 
 use crate::{
     error::{Error, ErrorResponse},
@@ -182,7 +182,7 @@ impl RestClient {
                     Err(_) => ErrorResponse::Plain(String::from_utf8_lossy(&response_bytes).into()),
                 };
 
-                error!("HTTP {status} error response for URL '{url}': {error_response:#?}");
+                warn!("HTTP {status} error response for URL '{url}': {error_response:#?}");
 
                 Err(Error::HttpResponse {
                     url: url.to_owned(),
