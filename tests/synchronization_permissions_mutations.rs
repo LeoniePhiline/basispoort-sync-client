@@ -1,6 +1,8 @@
 use chrono::{DateTime, Datelike, Days, Local, NaiveDate};
 use color_eyre::Result;
-use tracing::{debug, info, instrument};
+#[cfg(not(coverage))]
+use tracing::instrument;
+use tracing::{debug, info};
 
 use basispoort_sync_client::institutions::InstitutionsServiceClient;
 
@@ -22,7 +24,7 @@ async fn synchronization_permissions_mutations() -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_synchronization_permissions_mutations(
     client: &InstitutionsServiceClient<'_>,
 ) -> Result<()> {

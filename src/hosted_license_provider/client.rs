@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+#[cfg(not(coverage))]
 use tracing::instrument;
 
 use crate::{rest, Result};
@@ -19,7 +20,7 @@ pub struct HostedLicenseProviderClient<'a> {
 // TODO: Ensure method ID is valid and does not contain a slash; fail with an appropriate error otherwise.
 // TODO: Ensure all validation as documented.
 impl<'a> HostedLicenseProviderClient<'a> {
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub fn new<S: Into<String> + Debug>(
         rest_client: &'a rest::RestClient,
         identity_code: S,
@@ -39,12 +40,12 @@ impl<'a> HostedLicenseProviderClient<'a> {
         )
     }
 
-    #[instrument(skip(self))]
+    #[cfg_attr(not(coverage), instrument(skip(self)))]
     async fn get<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         self.rest_client.get(&self.make_path(path)).await
     }
 
-    #[instrument(skip(self, payload))]
+    #[cfg_attr(not(coverage), instrument(skip(self, payload)))]
     async fn post<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
@@ -53,7 +54,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         self.rest_client.post(&self.make_path(path), payload).await
     }
 
-    #[instrument(skip(self, payload))]
+    #[cfg_attr(not(coverage), instrument(skip(self, payload)))]
     async fn put<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
@@ -62,7 +63,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         self.rest_client.put(&self.make_path(path), payload).await
     }
 
-    #[instrument(skip(self))]
+    #[cfg_attr(not(coverage), instrument(skip(self)))]
     async fn delete<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         self.rest_client.delete(&self.make_path(path)).await
     }
@@ -71,12 +72,12 @@ impl<'a> HostedLicenseProviderClient<'a> {
      * Method management
      */
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_methods(&self) -> Result<MethodDetailsList> {
         self.get("methode").await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_method<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<MethodDetails> {
         self.get(&format!(
             "methode/{method_id}",
@@ -85,12 +86,12 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn create_method(&self, method: &MethodDetails) -> Result<()> {
         self.post("methode", method).await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn update_method(&self, method: &MethodDetails) -> Result<()> {
         self.put(
             &format!("methode/{method_id}", method_id = method.id),
@@ -99,7 +100,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_method<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<()> {
         self.delete(&format!(
             "methode/{method_id}",
@@ -108,7 +109,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_method_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -120,7 +121,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn set_method_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -136,7 +137,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_method_user_ids<S: AsRef<str> + Debug>(&self, method_id: S) -> Result<()> {
         self.delete(&format!(
             "methode/{method_id}/gebruiker",
@@ -145,7 +146,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn add_method_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -161,7 +162,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn remove_method_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -177,7 +178,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -189,7 +190,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn set_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -205,7 +206,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -217,7 +218,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn add_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -233,7 +234,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn remove_method_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -253,7 +254,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
      * Product management
      */
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_products<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -265,7 +266,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -279,7 +280,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn create_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -295,7 +296,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn update_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -312,7 +313,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_product<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -326,7 +327,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -340,7 +341,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn set_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -358,7 +359,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -372,7 +373,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn add_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -390,7 +391,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn remove_product_user_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -408,7 +409,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -422,7 +423,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn set_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -440,7 +441,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -454,7 +455,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn add_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -472,7 +473,7 @@ impl<'a> HostedLicenseProviderClient<'a> {
         .await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn remove_product_user_chain_ids<S: AsRef<str> + Debug>(
         &self,
         method_id: S,
@@ -494,12 +495,12 @@ impl<'a> HostedLicenseProviderClient<'a> {
      * Bulk actions
      */
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn bulk_grant_permissions(&self, bulk_request: &BulkRequest) -> Result<()> {
         self.post("permissions/grant", bulk_request).await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn bulk_revoke_permissions(&self, bulk_request: &BulkRequest) -> Result<()> {
         self.post("permissions/revoke", bulk_request).await
     }

@@ -1,5 +1,7 @@
 use color_eyre::Result;
-use tracing::{debug, info, instrument, trace};
+#[cfg(not(coverage))]
+use tracing::instrument;
+use tracing::{debug, info, trace};
 
 use basispoort_sync_client::{
     institutions::{InstitutionDetails, InstitutionsSearchPredicate, InstitutionsServiceClient},
@@ -49,7 +51,7 @@ async fn institution_properties_service() -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institution_ids(client: &InstitutionsServiceClient<'_>) -> Result<Vec<BasispoortId>> {
     debug!("Getting all institution IDs...");
     let institution_ids = client.get_institution_ids().await?;
@@ -60,7 +62,7 @@ async fn get_institution_ids(client: &InstitutionsServiceClient<'_>) -> Result<V
     Ok(institution_ids)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_details(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -82,7 +84,7 @@ async fn get_institutions_details(
     Ok(institutions_details)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_overviews(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -100,7 +102,7 @@ async fn get_institutions_overviews(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_groups(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -118,7 +120,7 @@ async fn get_institutions_groups(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_students(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -164,7 +166,7 @@ async fn get_institutions_students(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_staff(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -182,7 +184,7 @@ async fn get_institutions_staff(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_shortcut_references(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -205,7 +207,7 @@ async fn get_institutions_shortcut_references(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_institutions_synchronization_permissions(
     client: &InstitutionsServiceClient<'_>,
     institution_ids: &Vec<BasispoortId>,
@@ -228,7 +230,7 @@ async fn get_institutions_synchronization_permissions(
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn search_institutions_by_brin_code(
     client: &InstitutionsServiceClient<'_>,
     institutions_details: &Vec<(BasispoortId, InstitutionDetails)>,

@@ -7,7 +7,9 @@ use reqwest::{Identity, Response, Url};
 use serde::{de::DeserializeOwned, Serialize};
 use thiserror::Error;
 use tokio::{fs::File, io::AsyncReadExt};
-use tracing::{debug, error, info, instrument, trace};
+#[cfg(not(coverage))]
+use tracing::instrument;
+use tracing::{debug, error, info, trace};
 
 use crate::{
     error::{Error, ErrorResponse},
@@ -25,7 +27,7 @@ pub struct RestClientBuilder<'i> {
 }
 
 impl<'i> RestClientBuilder<'i> {
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub fn new(identity_cert_file: &'i str, environment: Environment) -> Self {
         info!(
             "Configured environment: {environment:?}, connecting to '{}'.",
@@ -63,7 +65,7 @@ impl<'i> RestClientBuilder<'i> {
     /// Build the configured [`RestClient`].
     ///
     /// Note that this method is `async` and returns a `Result`, as it reads the client certificate from disk.
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn build(self) -> Result<RestClient> {
         let mut cert = Vec::new();
         File::open(self.identity_cert_file)
@@ -123,7 +125,7 @@ pub enum ParseEnvironmentError {
 impl FromStr for Environment {
     type Err = ParseEnvironmentError;
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         Ok(match s {
             "test" => Self::Test,
@@ -154,7 +156,7 @@ pub struct RestClient {
 
 impl RestClient {
     // TODO: Unit test
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     fn make_url(&self, path: &str) -> Result<Url> {
         self.base_url.join(path).map_err(|source| {
             Error::ParseUrl {
@@ -165,7 +167,7 @@ impl RestClient {
         })
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     async fn error_status(&self, url: &Url, response: Response) -> Result<Response> {
         let status = response.status();
 
@@ -194,7 +196,7 @@ impl RestClient {
         }
     }
 
-    #[instrument(skip(self, response))]
+    #[cfg_attr(not(coverage), instrument(skip(self, response)))]
     async fn deserialize<T: DeserializeOwned + Debug>(&self, response: Response) -> Result<T> {
         let payload_raw = response.bytes().await.map_err(Error::ReceiveResponseBody)?;
         trace!(?payload_raw);
@@ -212,7 +214,7 @@ impl RestClient {
         Ok(payload_deserialized)
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn get<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         let url = self.make_url(path)?;
         trace!("GET {}", url.as_str());
@@ -228,7 +230,7 @@ impl RestClient {
         self.deserialize(response).await
     }
 
-    #[instrument(skip(payload))]
+    #[cfg_attr(not(coverage), instrument(skip(payload)))]
     pub async fn post<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
@@ -249,7 +251,7 @@ impl RestClient {
         self.deserialize(response).await
     }
 
-    #[instrument(skip(payload))]
+    #[cfg_attr(not(coverage), instrument(skip(payload)))]
     pub async fn put<P: Serialize + Debug + ?Sized, T: DeserializeOwned + Debug + ?Sized>(
         &self,
         path: &str,
@@ -270,7 +272,7 @@ impl RestClient {
         self.deserialize(response).await
     }
 
-    #[instrument]
+    #[cfg_attr(not(coverage), instrument)]
     pub async fn delete<T: DeserializeOwned + Debug + ?Sized>(&self, path: &str) -> Result<T> {
         let url = self.make_url(path)?;
         trace!("DELETE {}", url.as_str());

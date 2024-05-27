@@ -6,7 +6,9 @@ use color_eyre::{
 };
 use dotenvy::dotenv;
 use tokio::sync::OnceCell;
-use tracing::{info, instrument};
+use tracing::info;
+#[cfg(not(coverage))]
+use tracing::instrument;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
@@ -61,7 +63,7 @@ fn tracing_init() -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn make_rest_client() -> Result<RestClient> {
     Ok(RestClientBuilder::new(
         &env::var("IDENTITY_CERT_FILE")
@@ -74,7 +76,8 @@ async fn make_rest_client() -> Result<RestClient> {
     .await?)
 }
 
-#[instrument]
+#[allow(dead_code)] // This function is not used in the `hosted_license_provider_lifecycle` integration test.
+#[cfg_attr(not(coverage), instrument)]
 pub fn make_institutions_service_client(rest_client: &RestClient) -> InstitutionsServiceClient<'_> {
     InstitutionsServiceClient::new(rest_client)
 }

@@ -5,7 +5,9 @@ use color_eyre::{
     Result,
 };
 use itertools::Itertools;
-use tracing::{debug, error, info, instrument, trace};
+#[cfg(not(coverage))]
+use tracing::instrument;
+use tracing::{debug, error, info, trace};
 
 use basispoort_sync_client::{
     hosted_license_provider::{
@@ -382,7 +384,7 @@ async fn hosted_license_provider_application_lifecycle() -> Result<()> {
 
 // == Setup ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 fn make_hosted_license_provider_service_client(
     rest_client: &RestClient,
 ) -> Result<HostedLicenseProviderClient<'_>> {
@@ -396,7 +398,7 @@ fn make_hosted_license_provider_service_client(
 
 // == Method ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_methods(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDetailsList> {
     debug!("Getting all methods...");
     let methods_list = client.get_methods().await?;
@@ -407,7 +409,7 @@ async fn get_methods(client: &HostedLicenseProviderClient<'_>) -> Result<MethodD
     Ok(methods_list)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_method(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDetails> {
     debug!("Getting method '{METHOD_ID}'...");
     let method = client.get_method(METHOD_ID).await?;
@@ -418,7 +420,7 @@ async fn get_method(client: &HostedLicenseProviderClient<'_>) -> Result<MethodDe
     Ok(method)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn create_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating method '{METHOD_ID}'...");
 
@@ -447,7 +449,7 @@ async fn create_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn update_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) method '{METHOD_ID}'...");
 
@@ -476,7 +478,7 @@ async fn update_method(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn delete_method(client: &HostedLicenseProviderClient<'_>) -> crate::Result<()> {
     debug!("Deleting method '{METHOD_ID}'...");
 
@@ -489,7 +491,7 @@ async fn delete_method(client: &HostedLicenseProviderClient<'_>) -> crate::Resul
 
 // == Method users (classic ID) ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<UserIdList> {
     debug!("Getting user IDs with access to method '{METHOD_ID}'...");
 
@@ -501,7 +503,7 @@ async fn get_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result
     Ok(users)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn set_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -522,7 +524,7 @@ async fn set_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn add_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_ADD_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -543,7 +545,7 @@ async fn add_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn remove_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(METHOD_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -564,7 +566,7 @@ async fn remove_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Revoking all access to method '{METHOD_ID}'...");
 
@@ -579,7 +581,7 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 
 // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn get_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     let users = client.get_method_user_chain_ids(METHOD_ID).await?;
 
@@ -588,7 +590,7 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     Ok(())
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn set_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -601,7 +603,7 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     client.set_method_user_chain_ids(METHOD_ID, &users).await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn add_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -614,7 +616,7 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     client.add_method_user_chain_ids(METHOD_ID, &users).await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn remove_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -627,14 +629,14 @@ async fn delete_method_user_ids(client: &HostedLicenseProviderClient<'_>) -> Res
 //     client.remove_method_user_chain_ids(METHOD_ID, &users).await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn delete_method_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     client.delete_method_user_chain_ids(METHOD_ID).await
 // }
 
 // == Product ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_products(client: &HostedLicenseProviderClient<'_>) -> Result<ProductDetailsList> {
     debug!("Getting all products of method '{METHOD_ID}'...");
     let products_list = client.get_products(METHOD_ID).await?;
@@ -645,7 +647,7 @@ async fn get_products(client: &HostedLicenseProviderClient<'_>) -> Result<Produc
     Ok(products_list)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_product(client: &HostedLicenseProviderClient<'_>) -> Result<ProductDetails> {
     debug!("Getting product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
     let product = client.get_product(METHOD_ID, PRODUCT_ID).await?;
@@ -656,7 +658,7 @@ async fn get_product(client: &HostedLicenseProviderClient<'_>) -> Result<Product
     Ok(product)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn create_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Creating product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
@@ -689,7 +691,7 @@ async fn create_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn update_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Updating (or creating) product '{PRODUCT_ID}' in '{METHOD_ID}'...");
 
@@ -722,7 +724,7 @@ async fn update_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn delete_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Deleting product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
@@ -735,7 +737,7 @@ async fn delete_product(client: &HostedLicenseProviderClient<'_>) -> Result<()> 
 
 // == Product users (classic ID) ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn get_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<UserIdList> {
     debug!("Getting user IDs with access to product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
@@ -747,7 +749,7 @@ async fn get_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Resul
     Ok(users)
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn set_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -770,7 +772,7 @@ async fn set_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Resul
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn add_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_ADD_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -793,7 +795,7 @@ async fn add_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Resul
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn remove_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(PRODUCT_SET_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -816,7 +818,7 @@ async fn remove_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     debug!("Revoking all access to product '{PRODUCT_ID}' of method '{METHOD_ID}'...");
 
@@ -833,7 +835,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 
 // TODO: Implement chain ID  tests when / if switch to EckId is really happening.
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn get_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     let users = client
 //         .get_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
@@ -844,7 +846,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //     Ok(())
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn set_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -859,7 +861,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //         .await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn add_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -874,7 +876,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //         .await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn remove_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     // TODO: How do valid chain IDs look?
 //     let users: UserChainIdList = vec![UserChainId {
@@ -889,7 +891,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 //         .await
 // }
 
-// #[instrument]
+// #[cfg_attr(not(coverage), instrument)]
 // async fn delete_product_user_chain_ids(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
 //     client
 //         .delete_product_user_chain_ids(METHOD_ID, PRODUCT_ID)
@@ -898,7 +900,7 @@ async fn delete_product_user_ids(client: &HostedLicenseProviderClient<'_>) -> Re
 
 // == Method and product users (bulk request) ==
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn bulk_grant_permissions(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(BULK_GRANT_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
@@ -934,7 +936,7 @@ async fn bulk_grant_permissions(client: &HostedLicenseProviderClient<'_>) -> Res
     Ok(())
 }
 
-#[instrument]
+#[cfg_attr(not(coverage), instrument)]
 async fn bulk_revoke_permissions(client: &HostedLicenseProviderClient<'_>) -> Result<()> {
     let user_ids = Vec::from(BULK_REVOKE_USER_IDS);
     let user_ids_fmt = user_ids.iter().join(", ");
